@@ -13,32 +13,29 @@
         <nav>
             <ul>
                 <li><a href="index.html">首頁</a></li>
-                <li><a href="about.html">關於我們</a></li>
+                <li><a href="about.html">我的單字書</a></li>
             </ul>
         </nav>
     </header>
     <main>
         <div class="search-container">
-            <input type="text" placeholder="輸入單字搜尋" id="search-input">
-            <button onclick="searchWord()">搜尋</button>
+            <input type="text" placeholder="輸入單字搜尋" id="search-input" oninput="searchWord()">
             <button class="filter-button" onclick="openFilterPopup()">篩選</button>
         </div>
-        <div class="word-list">
-            <div class="word-item" onclick="window.location.href='word.html'">
-                <p><strong>placatory</strong></p>
-                <p>KK: /pləˈkeɪtəri/ 釋義: 撫慰的</p>
-                <p>例句: The tone of her voice was placatory.</p>
-            </div>
-            <div class="word-item" onclick="window.location.href='word.html'">
-                <p><strong>explore</strong></p>
-                <p>KK: /ɪkˈsplɔr/ 釋義: 探索</p>
-                <p>例句: The best way to explore the countryside is on foot.</p>
-            </div>
+        <div class="word-list" id="word-list">
+            <!-- Word items will be dynamically inserted here -->
         </div>
     </main>
     <footer>
+        <div>
+            <input type="text" id="wordInput" placeholder="輸入欲儲存的單字，以「,」分隔單字">
+            <img src="img/send.svg" id="sendIcon" onclick="submitWords()">
+        </div>
         <button onclick="window.location.href='upload.html'">拍照上傳單字</button>
     </footer>
+    
+
+    
 </body>
 
     <!-- Filter Popup -->
@@ -65,6 +62,6 @@
         <p>儲存成功</p>
     </div>
 
-</div>
+    </div>
 </body>
 </html>
