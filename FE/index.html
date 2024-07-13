@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的單字書</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="scripts.js" defer></script>
+</head>
+<body>
+    <header>
+        <h1>我的單字書</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">首頁</a></li>
+                <li><a href="about.html">關於我們</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <div class="search-container">
+            <input type="text" placeholder="輸入單字搜尋" id="search-input">
+            <button onclick="searchWord()">搜尋</button>
+            <button class="filter-button" onclick="openFilterPopup()">篩選</button>
+        </div>
+        <div class="word-list">
+            <div class="word-item" onclick="window.location.href='word.html'">
+                <p><strong>placatory</strong></p>
+                <p>KK: /pləˈkeɪtəri/ 釋義: 撫慰的</p>
+                <p>例句: The tone of her voice was placatory.</p>
+            </div>
+            <div class="word-item" onclick="window.location.href='word.html'">
+                <p><strong>explore</strong></p>
+                <p>KK: /ɪkˈsplɔr/ 釋義: 探索</p>
+                <p>例句: The best way to explore the countryside is on foot.</p>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <button onclick="window.location.href='upload.html'">拍照上傳單字</button>
+    </footer>
+</body>
+
+    <!-- Filter Popup -->
+    <div id="filter-popup" class="popup">
+        <div class="popup-content">
+            <h2>篩選單字</h2>
+            <label for="start-date">開始日期:</label>
+            <input type="date" id="start-date">
+            <label for="end-date">結束日期:</label>
+            <input type="date" id="end-date">
+            <label for="label">標籤:</label>
+            <select id="label">
+                <option value="all">全部</option>
+                <option value="important">重要</option>
+                <option value="new">新單字</option>
+                <!-- Add more options as needed -->
+            </select>
+            <button onclick="applyFilter()">確定</button>
+            <button onclick="closeFilterPopup()">取消</button>
+        </div>
+
+    <!-- Success Message -->
+    <div id="success-message" class="success-message">
+        <p>儲存成功</p>
+    </div>
+
+</div>
+</body>
+</html>

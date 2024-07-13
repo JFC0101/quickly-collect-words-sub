@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f5f5f5;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .word-box {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .word-box:last-child {
+            border-bottom: none;
+        }
+        .word-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .word-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .kk-phonetics {
+            font-size: 18px;
+            color: #555;
+        }
+        .word-info {
+            margin-top: 10px;
+        }
+        .word-info h2 {
+            margin: 10px 0 5px;
+            font-size: 18px;
+            color: #333;
+        }
+        .word-info p {
+            margin: 5px 0;
+            font-size: 16px;
+            color: #666;
+        }
+        .upload-button {
+            width: 100%;
+            padding: 15px;
+            background-color: #1e90ff;
+            color: white;
+            text-align: center;
+            font-size: 18px;
+            text-decoration: none;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% for result in results %}
+        <div class="word-box">
+            <div class="word-header">
+                <h1>{{ result.word }}</h1>
+                <span class="kk-phonetics">{{ result.phonetic }}</span>
+            </div>
+            <div class="word-info">
+                <h2>解釋</h2>
+                <p>{{ result.meaning }}</p>
+                <h2>例句</h2>
+                <p>{{ result.example }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <a href="/" class="upload-button">上傳單字</a>
+</body>
+</html>

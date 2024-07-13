@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拍照上傳圖片</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="scripts.js" defer></script>
+</head>
+<body>
+    <header>
+        <h1>拍照上傳圖片</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">首頁</a></li>
+                <li><a href="about.html">關於我們</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <div class="upload-container">
+            <input type="file" accept="image/*" capture="camera" id="image-upload">
+            <button onclick="uploadPhoto()">拍照上傳</button>
+            <button onclick="retakePhoto()">重新拍照</button>
+            <button onclick="submitPhoto()">上傳</button>
+        </div>
+    </main>
+</body>
+</html>
