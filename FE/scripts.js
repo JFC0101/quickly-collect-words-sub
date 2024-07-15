@@ -1,9 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Example words data
     const words = [
         {
             word: "placatory",
-            pronunciation: "pləˈkeɪtəri",
+            pronunciation: "[pləˈkeɪtəri]",
             definition: "撫慰的",
             example: "The tone of her voice was placatory.",
             derivatives: "",
@@ -13,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         {
             word: "explore",
-            pronunciation: "ɪkˈsplɔr",
+            pronunciation: "[ɪkˈsplɔr]",
             definition: "探索",
             example: "The best way to explore the countryside is on foot.",
             derivatives: "exploration, explorer",
@@ -22,7 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
             more: "The word 'explore' is derived from the Latin word 'explorare', meaning 'to cry out', which was later used metaphorically to refer to 'looking for information or searching for something'."
         }
     ];
-
     // Render word list on index.html
     const wordList = document.getElementById("word-list");
     if (wordList) {
@@ -40,15 +38,49 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
- 
+    // Function to search word
+    document.getElementById("search-input").addEventListener("input", searchWord);
+
+    function searchWord() {
+        const query = document.getElementById("search-input").value.toLowerCase();
+        const wordItems = document.querySelectorAll(".word-item");
+        wordItems.forEach(item => {
+            const word = item.querySelector("h3").textContent.toLowerCase();
+            if (word.includes(query)) {
+                item.style.display = "block";
+            } else {
+                item.style.display = "none";
+            }
+        });
+    }
+
+    // Function to open word detail
+    function openWordDetail(word) {
+        const wordQuery = encodeURIComponent(word.word);
+        location.href = `word.html?word=${wordQuery}`;
+    }
+
     
     // Render word detail on word.html
     const wordDetail = document.getElementById("word-detail");
     if (wordDetail) {
         const urlParams = new URLSearchParams(window.location.search);
         const wordParam = urlParams.get("word");
-        const word = words.find(w => w.word === wordParam);
-        if (word) {
+        if (wordParam) {
+            const word = words.find(w => w.word === wordParam);
+            if (word) {
+                displayWordDetail(word);
+            } else {
+                wordDetail.innerHTML = "<p>找不到該單字的詳細資料。</p>";
+            }
+        } else {
+            wordDetail.innerHTML = "<p>未提供單字參數。</p>";
+        }
+    }
+
+    // Function to display word detail
+    function displayWordDetail(word) {
+        if (wordDetail && word) {
             wordDetail.innerHTML = `
                 <h1>${word.word}</h1>
                 <p><strong>KK:</strong> ${word.pronunciation}</p>
@@ -61,8 +93,6 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
         }
     }
-
-
 
     // Function to navigate to previous or next word
     const navigateWord = (direction) => {
@@ -78,22 +108,6 @@ document.addEventListener("DOMContentLoaded", () => {
         updateUrlParam(nextWord.word);
     };
 
-    // Function to display word detail
-    const displayWordDetail = (word) => {
-        if (word) {
-            wordDetail.innerHTML = `
-                <h1>${word.word}</h1>
-                <p><strong>KK:</strong> ${word.pronunciation}</p>
-                <p><strong>解釋:</strong> ${word.definition}</p>
-                <p><strong>例句:</strong> ${word.example}</p>
-                <p><strong>衍生詞:</strong> ${word.derivatives}</p>
-                <p><strong>同義詞:</strong> ${word.synonyms}</p>
-                <p><strong>字根字首:</strong> ${word.roots}</p>
-                <p><strong>更多說明:</strong> ${word.more}</p>
-            `;
-        }
-    };
-
     // Function to update URL parameter
     const updateUrlParam = (word) => {
         const newUrl = `${window.location.pathname}?word=${encodeURIComponent(word)}`;
@@ -103,21 +117,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Bind navigation buttons
     document.getElementById("prevWordBtn").addEventListener("click", () => navigateWord(-1));
     document.getElementById("nextWordBtn").addEventListener("click", () => navigateWord(1));
-
-
-    function searchWord() {
-        const query = document.getElementById("search-input").value.toLowerCase();
-        const wordItems = document.querySelectorAll(".word-item");
-        wordItems.forEach(item => {
-            const word = item.querySelector("h3").textContent.toLowerCase();
-            if (word.includes(query)) {
-                item.style.display = "block";
-            } else {
-                item.style.display = "none";
-            }
-        });
-    }
-
 
     // Handle webcam and photo upload process
     const video = document.getElementById('webcam');
@@ -176,27 +175,59 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+//篩選的部分
+const filterPopup = document.getElementById("filter-popup");
+const startDateInput = document.getElementById("start-date");
+const endDateInput = document.getElementById("end-date");
 
+// Set default date range to today and 30 days prior
+const today = new Date().toISOString().split("T")[0];
+const pastDate = new Date();
+pastDate.setDate(pastDate.getDate() - 30);
+const pastDateString = pastDate.toISOString().split("T")[0];
+
+startDateInput.value = pastDateString;
+endDateInput.value = today;
+
+document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+    checkbox.checked = true;
+});
 
 function openFilterPopup() {
-    document.getElementById("filter-popup").style.display = "flex";
+    filterPopup.style.display = "flex";
 }
 
 function closeFilterPopup() {
-    document.getElementById("filter-popup").style.display = "none";
+    filterPopup.style.display = "none";
 }
 
 function applyFilter() {
-    // Implement filter logic here
+    const startDate = startDateInput.value;
+    const endDate = endDateInput.value;
+
+    const difficulties = [];
+    if (document.getElementById("difficulty-hard").checked) difficulties.push("hard");
+    if (document.getElementById("difficulty-medium").checked) difficulties.push("medium");
+    if (document.getElementById("difficulty-easy").checked) difficulties.push("easy");
+
+    if (difficulties.length === 0) {
+        difficulties.push("hard", "medium", "easy");
+    }
+
+    const filterData = {
+        startDate,
+        endDate,
+        difficulties
+    };
+
+    console.log("Filter Data:", filterData);
+    // Implement logic to send filterData to the backend and refresh the word list
+
     closeFilterPopup();
 }
 
-function openWordDetail(word) {
-    const wordQuery = encodeURIComponent(word.word);
-    location.href = `word.html?word=${wordQuery}`;
-}
-
-
+document.getElementById("apply-filter").addEventListener("click", applyFilter);
+document.getElementById("close-filter").addEventListener("click", closeFilterPopup);
 
 function submitWords() {
     const inputElement = document.getElementById('wordInput');

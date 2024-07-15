@@ -33,10 +33,6 @@
         </div>
         <button onclick="window.location.href='upload.html'">拍照上傳單字</button>
     </footer>
-    
-
-    
-</body>
 
     <!-- Filter Popup -->
     <div id="filter-popup" class="popup">
@@ -46,22 +42,19 @@
             <input type="date" id="start-date">
             <label for="end-date">結束日期:</label>
             <input type="date" id="end-date">
-            <label for="label">標籤:</label>
-            <select id="label">
-                <option value="all">全部</option>
-                <option value="important">重要</option>
-                <option value="new">新單字</option>
-                <!-- Add more options as needed -->
-            </select>
+            <div>
+                <label><input type="checkbox" id="difficulty-hard" value="hard"> 困難</label>
+                <label><input type="checkbox" id="difficulty-medium" value="medium"> 中等</label>
+                <label><input type="checkbox" id="difficulty-easy" value="easy"> 簡單</label>
+            </div>
             <button onclick="applyFilter()">確定</button>
             <button onclick="closeFilterPopup()">取消</button>
         </div>
+    </div>
 
     <!-- Success Message -->
     <div id="success-message" class="success-message">
         <p>儲存成功</p>
-    </div>
-
     </div>
 </body>
 </html>
