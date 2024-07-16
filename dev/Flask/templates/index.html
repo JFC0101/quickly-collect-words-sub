@@ -1,81 +1,4 @@
-<!-- 最單純的版本
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的單字書</title>
-</head>
-<body>
-    <h1>我的單字書</h1>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>單字</th>
-                <th>發音</th>
-                <th>定義</th>
-                <th>例句</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for word, pronunciation, definition, example in words %}
-            <tr>
-                <td>{{ word }}</td>
-                <td>{{ pronunciation }}</td>
-                <td>{{ definition }}</td>
-                <td>{{ example }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</body>
-</html>
--->
-
-
-<!-- 成功可以輸入單字儲存起來 -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的單字書</title>
-</head>
-<body>
-    <h1>我的單字書</h1>
-    <form action="/" method="post">
-        <input type="text" name="word" placeholder="輸入單字" required>
-        <button type="submit">提交</button>
-    </form>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>單字</th>
-                <th>發音</th>
-                <th>定義</th>
-                <th>例句</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for word, pronunciation, definition, example in words %}
-            <tr>
-                <td>{{ word }}</td>
-                <td>{{ pronunciation }}</td>
-                <td>{{ definition }}</td>
-                <td>{{ example }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</body>
-</html>
-
-
-
-
-
-
-<!-- 最複雜的版本
+<!-- 比較複雜的版本
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -144,5 +67,94 @@
 
 </body>
 </html>
-
 -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的單字書</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
+</head>
+<body>
+    <div class="container-header">
+        <div class="header">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+            <nav>
+                <a href="/">我的單字書</a>
+                <a href="#">關於我們</a>
+            </nav>
+            <div class="user">
+                <div class="user-icon"></div>
+                <span>User Name</span>
+            </div>
+        </div>
+</body>
+
+
+<body>
+    
+    <div class="container">
+        <h1>我的單字書</h1>
+        
+        <div class="search-bar">
+            <form action="/" method="POST">
+                <input type="text" id="word" name="word" placeholder="輸入欲查詢的單字">
+                <button type="submit">查詢</button>
+            </form>
+            <button type="button" onclick="window.location.href='/upload'">拍照新增單字</button>
+        </div>
+
+        
+        
+        {% if word %}
+        <div class="word-card">
+            <div class="word-header">
+                <div>{{ word.word }}</div>
+                <div class="difficulty">困難</div>
+            </div>
+            <div class="word-details">
+                <div>KK {{ word.pronunciation }}</div>
+                <div>型態 {{ word.definition }}</div>
+            </div>
+            <div class="word-meaning">解釋 {{ word.example }}</div>
+            {% if not word_in_db %}
+            <div class="add-word" onclick="document.getElementById('add-word-form').submit();">新增單字</div>
+            <form id="add-word-form" action="/add_word" method="POST">
+                <input type="hidden" name="word" value="{{ word.word }}">
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class = "hori-line"></div>
+
+
+        {% if words %}
+        <div>
+            {% for word in words %}
+            <div class="word-card">
+                <div class="word-header">
+                    <div>{{ word[0] }}</div>
+                    <div class="difficulty">困難</div>
+                </div>
+                <div class="word-details">
+                    <div>KK {{ word[1] }}</div>
+                    <div>型態 {{ word[2] }}</div>
+                </div>
+                <div class="word-meaning">解釋 {{ word[3] }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+
+
+
+
+
+    </div>
+</body>
+</html>
