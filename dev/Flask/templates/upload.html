@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拍照上傳圖片</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+            <nav>
+                <a href="/">我的單字書</a>
+                <a href="/about">關於我們</a>
+            </nav>
+            <div class="user">
+                <div class="user-icon"></div>
+                <span>User Name</span>
+            </div>
+        </div>
+
+        <h1>拍照上傳圖片</h1>
+        <div class="center-text-container"> 
+            <div class="highlight-text">預設自動辨識「黃色螢光筆」劃記的單字</div>
+        </div>
+        
+        <div class="upload-section">        
+            <div class="main-content">
+                <div class="webcam-section">
+                    <video id="webcam" autoplay></video>
+                </div>
+                <div class="upload-section">
+                    
+                    <button onclick="captureAndUpload()">截取上傳</button>
+                    
+                    <div class="divider">
+                        <span> ————— &emsp; 或選擇照片上傳 &emsp;—————</span>
+                    </div>
+                    <div class="upload-options">
+                        <label for="file-upload" class="custom-file-upload">選擇圖片</label>
+                        <input id="file-upload" name="file" type="file" accept="image/*">
+                        <span id="file-name">未選取任何檔案</span>
+                        <button onclick="uploadFile()">上傳</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

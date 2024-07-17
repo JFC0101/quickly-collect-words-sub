@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Detail</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+</head>
+<body>
+    <div class="container-header">
+        <div class="header">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+            <nav>
+                <a href="/">我的單字書</a>
+                <a href="/about">關於我們</a>
+            </nav>
+            <div class="user">
+                <div class="user-icon"></div>
+                <span>User Name</span>
+            </div>
+        </div>
+</body>
+
+
+
+<body>
+
+    <div class="back">
+            <a href="/">＜ 回到單字書</a>
+    </div>  
+    
+
+    <div class="word-detail">
+        <h1>{{ word[1] }}</h1>
+        <p>KK: {{ word[2] }}</p>
+        <p>型態: {{ word[3] }}</p>
+        <p>解釋: {{ word[4] }}</p>
+
+        <div class = "hori-line"></div>
+
+        <div class="difficulty-radio">
+            <label>
+                <input type="radio" name="difficulty" value="1" {{ 'checked' if word[5] == 1 else '' }}>
+                <span class="difficulty" data-difficulty="1">困難（不熟悉的）</span>
+            </label>
+            <label>
+                <input type="radio" name="difficulty" value="2" {{ 'checked' if word[5] == 2 else '' }}>
+                <span class="difficulty" data-difficulty="2">中等（有印象的）</span>
+            </label>
+            <label>
+                <input type="radio" name="difficulty" value="3" {{ 'checked' if word[5] == 3 else '' }}>
+                <span class="difficulty" data-difficulty="3">簡單（已記住的）</span>
+            </label>
+        </div>
+   
+    </div>
+    <div class="navigation buttons">
+        {% if prev_word %}
+            <button id="prev-word" data-word="{{ prev_word[1] }}">上一個單字</button>
+        {% endif %}
+        
+        {% if next_word %}
+            <button id="next-word" data-word="{{ next_word[1] }}">下一個單字</button>
+        {% endif %}
+    </div>
+
+
+    <script>
+        $(document).ready(function() {
+            $('.difficulty').click(function() {
+                var word = '{{ word[1] }}'; // 單字名稱
+                var difficulty = $(this).data('difficulty'); // 難易度標籤的值
+
+                updateWordDifficulty(word, difficulty);
+            });
+
+            function updateWordDifficulty(word, difficulty) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/update_difficulty',
+                    data: JSON.stringify({ 'word': word, 'difficulty': difficulty }),
+                    contentType: 'application/json',
+                    success: function(response) {
+                        console.log('難易度已更新');
+                        // 可以在此處添加 UI 更新或其他操作
+                    },
+                    error: function(error) {
+                        console.error('更新難易度時出錯', error);
+                    }
+                });
+            }
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            $('#prev-word').click(function() {
+                var word = $(this).data('word');
+                window.location.href = '/word?word=' + word;
+            });
+
+            $('#next-word').click(function() {
+                var word = $(this).data('word');
+                window.location.href = '/word?word=' + word;
+            });
+        });
+    </script>
+</body>
+</html>
