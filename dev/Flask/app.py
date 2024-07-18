@@ -69,7 +69,7 @@ def get_word_details(word):
 def insert_word_details(word, pronunciation, definition, example):
     conn = sqlite3.connect('word.db')
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO word (word, pronunciation, definition, example) VALUES (?, ?, ?, ?)", (word, pronunciation, definition, example))
+    cursor.execute("INSERT INTO word (word, pronunciation, definition, example) VALUES (?, ?, ?, ?, ?)", (word, pronunciation, definition, example, 1))
     conn.commit()
     conn.close()
 
@@ -89,6 +89,8 @@ def fetch_word_details(word):
     word_details = cursor.fetchone()
     conn.close()
     return word_details
+
+
 
 @app.route('/update_difficulty', methods=['POST'])
 def update_difficulty():
@@ -115,6 +117,7 @@ def update_difficulty():
 # Home page, display all words and search functionality
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    new_words = request.args.get('new_words', '').split(',')
     error = None
     word = None  # Initialize word to None
     word_in_db = False
@@ -159,7 +162,7 @@ def index():
         # 这里不传递 error 参数
         return render_template('index.html', words=fetch_all_words(), word=word, word_in_db=word_in_db) #渲染模板 index.html，並將所有單字（從資料庫中獲取）和查詢結果（如果有）傳遞到前端。
 
-    return render_template('index.html', words=fetch_all_words(), error=error)
+    return render_template('index.html', words=fetch_all_words(), word=word, word_in_db=word_in_db, new_words=new_words) #
 
 # Add a new word to the database
 @app.route('/add_word', methods=['POST'])
@@ -169,6 +172,50 @@ def add_word():
     if word_details:
         insert_word_details(word_details['word'], word_details['pronunciation'], word_details['definition'], word_details['example'])  # 將獲取到的單字詳細信息插入資料庫
     return redirect(url_for('index'))  # 重定向到首頁
+
+
+
+# 照相得到的新的單字 Add a new word to the database
+@app.route('/process_words', methods=['POST'])
+def process_words():
+    words = request.json.get('words', [])
+    processed_words = []
+
+    try:
+        conn = sqlite3.connect('word.db')
+        cursor = conn.cursor()
+
+        for word_to_search in words:
+            cursor.execute("SELECT * FROM word WHERE word=?", (word_to_search,))
+            word_details = cursor.fetchone()
+
+            if word_details:
+                processed_words.append(word_to_search)
+            else:
+                word = get_word_details(word_to_search)
+                if word:
+                    cursor.execute("INSERT INTO word (word, pronunciation, definition, example, difficulty) VALUES (?, ?, ?, ?, ?)",
+                                   (word['word'], word['pronunciation'], word['definition'], word['example'], 1))
+                    conn.commit()
+                    processed_words.append(word_to_search)
+
+        conn.close()
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'error': 'Error processing words'}), 500
+
+    return jsonify({'new_words': processed_words})
+
+
+
+
+
+
+
+
+
+
+
 
 
 @app.route('/word')
@@ -186,25 +233,28 @@ def word_detail():
     return render_template('word.html', word=word, prev_word=prev_word, next_word=next_word)
 
 
+@app.route('/upload_capture', methods=['POST'])
+def upload_capture():
+    # 保存捕获的 JPEG 图片
+    file = request.files.get('file')
+    if file:
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'capture.jpg'))
+        return jsonify({'success': True})
+    return jsonify({'error': 'No file uploaded'})
 
 
+#处理文件上传请求，保存上传的文件到指定的文件夹中，并返回上传状态的 JSON 响应
 @app.route('/upload_file', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'})
-    
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'})
-    
-    # Save the file to the upload folder
-    file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
-    
-    # Example: Assuming fixed words for demonstration
-    words = ['explain', 'happy']
-    
-    # Return JSON data with image filename and words
-    return jsonify({'image': file.filename, 'words': words})
+    if file:
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
+        return jsonify({'success': 'File uploaded successfully', 'filename': file.filename})
+    return jsonify({'error': 'File upload failed'})
 
 
 @app.route('/upload', methods=['GET', 'POST'])
@@ -215,8 +265,9 @@ def upload():
         if uploaded_file:
             # Process uploaded file if needed
             # Example: recognizing words from the image
-            words = ['example_word_1', 'example_word_2']
+            words = ['show', 'choose','maybe','explore']
             image_name = uploaded_file.filename
+            uploaded_file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_name))
 
             # Redirect to word preview page with image and words data
             return jsonify({'image': image_name, 'words': words})
@@ -224,21 +275,12 @@ def upload():
     return render_template('upload.html')
 
 
-@app.route('/upload_capture', methods=['POST'])
-def upload_capture():
-    # 保存捕获的 JPEG 图片
-    file = request.files.get('file')
-    if file:
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'capture.jpg'))
-        return jsonify({'success': True})
-    return jsonify({'error': 'No file uploaded'})
+
 
 @app.route('/word-preview')
 def word_preview():
-    # 传递捕获的图片到预览页面
-    image_name = 'capture.jpg'  # 使用捕获的图片文件名
-    words = ['explain', 'happy']  # 示例单词列表，可以根据需要动态生成
-
+    image_name = request.args.get('image')
+    words = request.args.get('words').split(',')
     return render_template('word-preview.html', image_name=image_name, words=words)
 
 

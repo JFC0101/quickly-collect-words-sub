@@ -45,13 +45,11 @@
 
 
         {% if word %}
-        <div class="word-card">
+        <div class="word-card ">
             <div class="word-header">
                 <div>{{ word.word }}</div>                
                 <div class="difficulty {{ 'difficult' if word[5] == 1 else ('medium' if word[5] == 2 else 'easy') }}">{{ '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單') }}</div>
             </div>
-
-
             <div class="word-details">
                 <div>KK {{ word.pronunciation }}</div>
                 <div>型態 {{ word.definition }}</div>
@@ -71,10 +69,11 @@
         
 
         {% if words %}
+
         <div>
             {% for word in words %}
                 <a href="{{ url_for('word_detail', word=word[1]) }}" class="word-link">
-                    <div class="word-card">
+                    <div class="word-card {{ 'new-word' if word[1] in new_words else '' }}">
                         <div class="word-header">
                             <div>{{ word[1] }}</div>
                             <div class="difficulty {{ 'difficult' if word[5] == 1 else ('medium' if word[5] == 2 else 'easy') }}">{{ '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單') }}</div>
@@ -88,9 +87,16 @@
                 </a>
             {% endfor %}
         </div>
+
+
         {% endif %}
 
     </div>
+
+
+
+
+
     <script>
         document.getElementById('word-form').addEventListener('submit', function(event) {
             const wordInput = document.getElementById('word').value;

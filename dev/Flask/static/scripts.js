@@ -52,22 +52,24 @@ function uploadBlob(blob) {
     })
     .then(response => response.json())
     .then(data => {
-        // 跳转到单词预览页面，并传递上传的图片和可能的单词
-        window.location.href = `/word-preview?image=${data.image}&words=${data.words}`;
+        // After successful upload, process uploaded file if needed
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Redirect to word preview page with image and words data
+            window.location.href = `/word-preview?image=${data.image}&words=${data.words}`;
+        })
+        .catch(error => {
+            console.error('Error processing uploaded file:', error);
+        });
     })
     .catch(error => {
         console.error('Error uploading file:', error);
     });
-
-    /*.then(data => {
-        alert('Capture uploaded successfully');
-        console.log(data);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });*/
 }
-
 
 function uploadFile() {
     const input = document.getElementById('file-upload');
@@ -76,14 +78,25 @@ function uploadFile() {
         const formData = new FormData();
         formData.append('file', file);
 
-        fetch('/upload', {
+        fetch('/upload_file', {
             method: 'POST',
             body: formData
         })
         .then(response => response.json())
         .then(data => {
-            // 跳转到单词预览页面，并传递上传的图片和可能的单词
-            window.location.href = `/word-preview?image=${data.image}&words=${data.words}`;
+             // After successful upload, process uploaded file if needed
+             fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Redirect to word preview page with image and words data
+                window.location.href = `/word-preview?image=${data.image}&words=${data.words}`;
+            })
+            .catch(error => {
+                console.error('Error processing uploaded file:', error);
+            });
         })
         .catch(error => {
             console.error('Error uploading file:', error);
@@ -98,7 +111,7 @@ $(document).ready(function() {
     $('#prev-word').click(function() {
         var word = $(this).data('word');
         console.log('Previous word:', word); // 調試信息
-        window.location.href = '/word?word=' + word;
+        window.location.replace = '/word?word=' + word;
     });
 
     $('#next-word').click(function() {
@@ -110,18 +123,55 @@ $(document).ready(function() {
 
 
 
-//按了會把確認的單字們上傳與刪除的功能
+
 
 function deleteWord(word) {
-    const wordElement = document.querySelector(`.word-item .word-text:contains('${word}')`).closest('.word-item');
-    wordElement.remove();
+    // 获取所有单词项元素
+    const wordItems = document.querySelectorAll('.word-item');
+    
+    wordItems.forEach(item => {
+        // 找到每个单词项的文本
+        const wordText = item.querySelector('.word-text').textContent;
+        
+        // 比较文本内容是否与要删除的单词匹配
+        if (wordText === word) {
+            // 移除匹配的单词项
+            item.remove();
+        }
+    });
 }
+
 
 function sendWords() {
     const words = [];
     document.querySelectorAll('.word-text').forEach(element => {
         words.push(element.textContent.trim());
     });
-    // 在这里添加发送单词到服务器的逻辑，可以使用 fetch 函数发送 POST 请求
-    console.log('Sending words:', words);
+
+    // 将单词列表发送到服务器进行处理
+    fetch('/process_words', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ words: words })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.error) {
+            alert('Error processing words: ' + data.error);
+        } else {
+            // 重定向到首页，并传递新处理的单词列表
+            console.log('Redirecting to index with new words:', data.new_words);
+            window.location.replace(`/?new_words=${data.new_words.join(',')}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 }

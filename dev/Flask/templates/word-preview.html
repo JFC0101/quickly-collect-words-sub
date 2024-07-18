@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>單字預覽</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
 </head>
 <body>
     <div class="container">
@@ -20,48 +21,34 @@
             </div>
         </div>
 
-        <div class="container">
-            <h1>單字預覽</h1>
-            <div class="word-preview">
-                <div class="image-preview">
-                    <img src="{{ url_for('static', filename='uploads/' + image_name) }}" alt="Uploaded Image">
-                </div>
-                <div class="words-list">
-                    <h2>可能的單字</h2>
-                    <div id="word-container">
-                        {% for word in words %}
-                        <div class="word-item">
-                            <div class="word-text">{{ word }}</div>
-                            <div class="delete-button" onclick="deleteWord('{{ word }}')">
-                                <div class="delete-icon"></div>
-                            </div>
+        <h1>單字預覽</h1>
+    
+        <div class="preview-section">
+            <div class="image-preview-container">
+                <img class="image-preview" src="{{ url_for('static', filename='uploads/' + image_name) }}" alt="Uploaded Image">
+            </div>
+            <div class="words-list">
+                <h2>可能的單字</h2>
+                <div id="word-container">
+                    {% for word in words %}
+                    <div class="word-item">
+                        <div class="word-text">{{ word }}</div>
+                        <div class="delete-button" onclick="deleteWord('{{ word }}')">
+                            <img src="{{ url_for('static', filename='img/X.svg') }}" alt="delete">
                         </div>
-                        {% endfor %}
                     </div>
-                    <button class="confirm-button" onclick="sendWords()">確認</button>
+                    {% endfor %}
                 </div>
+                <button class="main-button" onclick="sendWords()">確認</button>
             </div>
         </div>
-    
-        <!--進度:目前的內容案叉叉還不會消失-->
-        <script>
-            function deleteWord(word) {
-                const wordElement = document.querySelector(`.word-item .word-text:contains('${word}')`).closest('.word-item');
-                wordElement.remove();
-            }
+    </div>
+        
+        
 
-            function sendWords() {
-                const words = [];
-                document.querySelectorAll('.word-text').forEach(element => {
-                    words.push(element.textContent.trim());
-                });
-                // 在这里添加发送单词到服务器的逻辑，可以使用 fetch 函数发送 POST 请求
-                console.log('Sending words:', words);
-            }
-                        
 
-        </script>
-    
+
+ 
         
 </body>
 </html>

@@ -81,7 +81,7 @@
                 $.ajax({
                     type: 'POST',
                     url: '/update_difficulty',
-                    data: JSON.stringify({ 'word': word, 'difficulty': difficulty }),
+                    data: JSON.stringify({ 'user_id': user_id, 'word': word, 'difficulty': difficulty }),
                     contentType: 'application/json',
                     success: function(response) {
                         console.log('難易度已更新');
