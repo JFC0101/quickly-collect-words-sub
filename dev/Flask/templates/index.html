@@ -1,16 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的單字書</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='toast.js') }}" defer></script>
 </head>
 <body>
-    <div class="container-header">
+    <nav class="container-header">
         <div class="header">
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+            <a href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+            </a>
             <nav>
                 <a href="/">我的單字書</a>
                 <a href="/about">關於我們</a>
@@ -20,14 +23,12 @@
                 <span>User Name</span>
             </div>
         </div>
-</body>
+    </nav>
 
-
-<body>
-    {% if error %}
-    <div class="error-message">{{ error }}</div>
-    {% endif %}
     
+    <!-- Toast container -->
+    <div id="toast" class="toast"> text</div>
+
     <div class="container">
         <h1>我的單字書</h1>
         
@@ -35,90 +36,67 @@
             <form id="word-form" action="/" method="POST">
                 <input type="text" id="word" name="word" placeholder="輸入欲查詢的單字">
                 <button class="main-button" type="submit">查詢</button>
+                <button class="main-button" type="button" onclick="window.location.href='/upload'">拍照新增單字</button>
             </form>
-            <button class="main-button" type="button" onclick="window.location.href='/upload'">拍照新增單字</button>
-            
         </div>
         <div class="search-bar">
             <div id="error-message" class="error-message">請輸入有效的英文字符或逗號。</div>
         </div>
 
+        <div class="word-list">
+            {% if word %}
+            <div class="word-card ">
+                <div class="word-header">
+                    <div>{{ word.word }}</div>                
+                    <div class="difficulty {{ 'difficult' if word[5] == 1 else ('medium' if word[5] == 2 else 'easy') }}">{{ '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單') }}</div>
+                </div>
+                <div class="word-details">
+                    <div>KK {{ word.pronunciation }}</div>
+                    <div>型態 {{ word.definition }}</div>
+                </div>
+                <div class="word-meaning">解釋 {{ word.example }}</div>
+                {% if not word_in_db %}
+                <div class="add-word" onclick="document.getElementById('add-word-form').submit();">新增單字</div>
+                <form id="add-word-form" action="/add_word" method="POST">
+                    <input type="hidden" name="word" value="{{ word.word }}">
+                </form>
+                {% endif %}
+            </div>
 
-        {% if word %}
-        <div class="word-card ">
-            <div class="word-header">
-                <div>{{ word.word }}</div>                
-                <div class="difficulty {{ 'difficult' if word[5] == 1 else ('medium' if word[5] == 2 else 'easy') }}">{{ '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單') }}</div>
+            <div class = "hori-line"></div>
+            {% endif %}
+
+            
+
+            {% if words %}
+
+            <div>
+                {% for word in words %}
+                    <a href="{{ url_for('word_detail', word=word[1]) }}" class="word-link">
+                        <div class="word-card {{ 'new-word' if word[1] in new_words else '' }}">
+                            <div class="word-header">
+                                <div>{{ word[1] }}</div>
+                                <div class="difficulty {{ 'difficult' if word[5] == 1 else ('medium' if word[5] == 2 else 'easy') }}">{{ '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單') }}</div>
+                            </div>
+                            <div class="word-details">
+                                <div>KK {{ word[2] }}</div>
+                                <div>型態 {{ word[3] }}</div>
+                            </div>
+                            <div class="word-meaning">解釋 {{ word[4] }}</div>
+                        </div>
+                    </a>
+                {% endfor %}
             </div>
-            <div class="word-details">
-                <div>KK {{ word.pronunciation }}</div>
-                <div>型態 {{ word.definition }}</div>
-            </div>
-            <div class="word-meaning">解釋 {{ word.example }}</div>
-            {% if not word_in_db %}
-            <div class="add-word" onclick="document.getElementById('add-word-form').submit();">新增單字</div>
-            <form id="add-word-form" action="/add_word" method="POST">
-                <input type="hidden" name="word" value="{{ word.word }}">
-            </form>
+
+
             {% endif %}
         </div>
-
-        <div class = "hori-line"></div>
-        {% endif %}
-
-        
-
-        {% if words %}
-
-        <div>
-            {% for word in words %}
-                <a href="{{ url_for('word_detail', word=word[1]) }}" class="word-link">
-                    <div class="word-card {{ 'new-word' if word[1] in new_words else '' }}">
-                        <div class="word-header">
-                            <div>{{ word[1] }}</div>
-                            <div class="difficulty {{ 'difficult' if word[5] == 1 else ('medium' if word[5] == 2 else 'easy') }}">{{ '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單') }}</div>
-                        </div>
-                        <div class="word-details">
-                            <div>KK {{ word[2] }}</div>
-                            <div>型態 {{ word[3] }}</div>
-                        </div>
-                        <div class="word-meaning">解釋 {{ word[4] }}</div>
-                    </div>
-                </a>
-            {% endfor %}
-        </div>
-
-
-        {% endif %}
-
     </div>
 
 
 
 
 
-    <script>
-        document.getElementById('word-form').addEventListener('submit', function(event) {
-            const wordInput = document.getElementById('word').value;
-            const errorMessage = document.getElementById('error-message');
-            const regex = /^[A-Za-z,]+$/;
-
-            if (!regex.test(wordInput)) {
-                event.preventDefault(); // Prevent form submission
-                errorMessage.style.display = 'block'; // Show error message
-            } else {
-                errorMessage.style.display = 'none'; // Hide error message
-            }
-        });
-    </script>
-
-    <script>
-        // This script ensures that the error message is displayed only when needed
-        const error = "{{ error }}";
-        if (error) {
-            document.getElementById('error-message').style.display = 'block';
-        }
-    </script>
 
 
 </body>

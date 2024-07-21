@@ -1,28 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>單字預覽</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
 </head>
+
 <body>
-    <div class="container">
+    <nav class="container-header">
         <div class="header">
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+            <a href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+            </a>
             <nav>
                 <a href="/">我的單字書</a>
-                <a href="#">關於我們</a>
+                <a href="/about">關於我們</a>
             </nav>
             <div class="user">
                 <div class="user-icon"></div>
                 <span>User Name</span>
             </div>
         </div>
+    </nav>
 
-        <h1>單字預覽</h1>
     
+
+    <div class="container">
+        <h1>單字預覽</h1>
+
         <div class="preview-section">
             <div class="image-preview-container">
                 <img class="image-preview" src="{{ url_for('static', filename='uploads/' + image_name) }}" alt="Uploaded Image">
@@ -45,7 +51,59 @@
     </div>
         
         
+    <script>
+        function sendWords() {
+            const words = [];
+            document.querySelectorAll('.word-text').forEach(element => {
+                words.push(element.textContent.trim());
+            });
 
+            fetch('/process_words', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ words: words })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    alert('Error processing words: ' + data.error);
+                } else {
+                    console.log('Redirecting to index with new words:', data.new_words);
+                    const queryString = `/?new_words=${data.new_words.join(',')}&toast=${encodeURIComponent(data.toast || '')}`;
+                    window.location.replace(queryString);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+
+
+    <script>
+        function deleteWord(word) {
+            // 获取所有单词项元素
+            const wordItems = document.querySelectorAll('.word-item');
+            
+            wordItems.forEach(item => {
+                // 找到每个单词项的文本
+                const wordText = item.querySelector('.word-text').textContent;
+                
+                // 比较文本内容是否与要删除的单词匹配
+                if (wordText === word) {
+                    // 移除匹配的单词项
+                    item.remove();
+                }
+            });
+        }
+    </script>
 
 
  

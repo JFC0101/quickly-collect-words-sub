@@ -1,3 +1,4 @@
+
 document.addEventListener("DOMContentLoaded", function() {
     const fileUpload = document.getElementById('file-upload');
     const fileName = document.getElementById('file-name');
@@ -107,22 +108,6 @@ function uploadFile() {
 }
 
 
-$(document).ready(function() {
-    $('#prev-word').click(function() {
-        var word = $(this).data('word');
-        console.log('Previous word:', word); // 調試信息
-        window.location.replace = '/word?word=' + word;
-    });
-
-    $('#next-word').click(function() {
-        var word = $(this).data('word');
-        console.log('Next word:', word); // 調試信息
-        window.location.href = '/word?word=' + word;
-    });
-});
-
-
-
 
 
 function deleteWord(word) {
@@ -142,36 +127,9 @@ function deleteWord(word) {
 }
 
 
-function sendWords() {
-    const words = [];
-    document.querySelectorAll('.word-text').forEach(element => {
-        words.push(element.textContent.trim());
-    });
 
-    // 将单词列表发送到服务器进行处理
-    fetch('/process_words', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ words: words })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.error) {
-            alert('Error processing words: ' + data.error);
-        } else {
-            // 重定向到首页，并传递新处理的单词列表
-            console.log('Redirecting to index with new words:', data.new_words);
-            window.location.replace(`/?new_words=${data.new_words.join(',')}`);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
+
+
+
+
+

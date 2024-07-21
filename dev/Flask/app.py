@@ -69,7 +69,7 @@ def get_word_details(word):
 def insert_word_details(word, pronunciation, definition, example):
     conn = sqlite3.connect('word.db')
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO word (word, pronunciation, definition, example) VALUES (?, ?, ?, ?, ?)", (word, pronunciation, definition, example, 1))
+    cursor.execute("INSERT INTO word (word, pronunciation, definition, example, difficulty) VALUES (?, ?, ?, ?, ?)", (word, pronunciation, definition, example, 1))
     conn.commit()
     conn.close()
 
@@ -98,7 +98,7 @@ def update_difficulty():
     word = data.get('word')
     difficulty = data.get('difficulty')
 
-    # 做一些更新難易度的處理，這裡假設你已經有了更新資料庫的功能
+
     # 在這裡處理更新資料庫的動作，例如：
     conn = sqlite3.connect('word.db')
     cursor = conn.cursor()
@@ -112,13 +112,11 @@ def update_difficulty():
 
 
 
-# Flask routes
-
 # Home page, display all words and search functionality
 @app.route('/', methods=['GET', 'POST'])
 def index():
     new_words = request.args.get('new_words', '').split(',')
-    error = None
+    ##error = None (改由前端判斷與給 error)
     word = None  # Initialize word to None
     word_in_db = False
 
@@ -129,7 +127,7 @@ def index():
         # 仅在前端验证失效时，进行后端验证
         if not word_to_search or not all(char.isalpha() or char == ',' for char in word_to_search):
                     error = "請輸入有效的英文字符或逗號。"
-                    return render_template('index.html', words=fetch_all_words(), error=error)
+                    ##return render_template('index.html', words=fetch_all_words(), error=error) (改由前端判斷與給 error，如果要前端能接收後端的 Error 要重新寫 index.heml 內有接收的位置)
 
 
         try:
@@ -152,9 +150,6 @@ def index():
 
                 if word: 
                     word_in_db = False
-                #如果 API 成功返回詳細信息，將其插入到資料庫中。
-                    #insert_word_details(word['word'], word['pronunciation'], word['definition'], word['example'])
-
             
         except Exception as e:
             print(f"Error: {e}")
@@ -195,7 +190,7 @@ def process_words():
                 word = get_word_details(word_to_search)
                 if word:
                     cursor.execute("INSERT INTO word (word, pronunciation, definition, example, difficulty) VALUES (?, ?, ?, ?, ?)",
-                                   (word['word'], word['pronunciation'], word['definition'], word['example'], 1))
+                                   (word['word'], word['pronunciation'], word['definition'], word['example'], 3))
                     conn.commit()
                     processed_words.append(word_to_search)
 
@@ -204,7 +199,8 @@ def process_words():
         print(f"Error: {e}")
         return jsonify({'error': 'Error processing words'}), 500
 
-    return jsonify({'new_words': processed_words})
+    # 返回 JSON 响应
+    return jsonify({'new_words': processed_words, 'toast': '新增成功'})
 
 
 

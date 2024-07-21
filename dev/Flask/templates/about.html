@@ -1,17 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>關於我們</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <script src="{{ url_for('static', filename='scripts.js') }}" defer></script>
 </head>
 
 <body>
-    <div class="container-header">
+    <nav class="container-header">
         <div class="header">
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+            <a href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+            </a>
             <nav>
                 <a href="/">我的單字書</a>
                 <a href="/about">關於我們</a>
@@ -21,4 +22,53 @@
                 <span>User Name</span>
             </div>
         </div>
+    </nav>
+
+
+    <div class="container">
+        <h1>關於我們</h1>
+
+        <div class="team-list">
+            <div class="team-member">
+                <img class="profile-pic" src="img/ellipse-5-1.png" alt="Profile Picture">
+                <div class="member-info">
+                    <div class="member-role">指導老師</div>
+                    <div class="member-name">Joseph, Alan</div>
+                    <div class="member-title">艾鍗學院 AI 深度講師艾鍗學院 AI 深度講師艾鍗學院 AI 深度講師艾鍗學院 AI 深度講師艾鍗學院 AI 深度講師艾鍗學院 AI 深度講師艾鍗學院 AI 深度講師艾鍗學院 AI 深度講師艾鍗學院 AI 深度講師</div>
+                </div>
+            </div>
+            <div class="team-member">
+                <img class="profile-pic" src="img/profile-pic-placeholder.png" alt="Profile Picture">
+                <div class="member-info">
+                    <div class="member-role">組長</div>
+                    <div class="member-name">Monday</div>
+                    <div class="member-title">組織組織最多4隻</div>
+                </div>
+            </div>
+            <div class="team-member">
+                <img class="profile-pic" src="img/profile-pic-placeholder.png" alt="Profile Picture">
+                <div class="member-info">
+                    <div class="member-role">組員</div>
+                    <div class="member-name">Monday</div>
+                    <div class="member-title">組織組織最多4隻</div>
+                </div>
+            </div>
+            <div class="team-member">
+                <img class="profile-pic" src="img/profile-pic-placeholder.png" alt="Profile Picture">
+                <div class="member-info">
+                    <div class="member-role">組員</div>
+                    <div class="member-name">Monday</div>
+                    <div class="member-title">組織組織最多4隻</div>
+                </div>
+            </div>
+            <div class="team-member">
+                <img class="profile-pic" src="img/profile-pic-placeholder.png" alt="Profile Picture">
+                <div class="member-info">
+                    <div class="member-role">組員</div>
+                    <div class="member-name">Monday</div>
+                    <div class="member-title">組織組織最多4隻</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
