@@ -726,3 +726,159 @@ body {
     font-size: 0.9em;
     color: gray;
 }
+
+
+
+/*filter style*/
+/* 篩選功能*/
+
+/* 让 h1 和 filter 按钮在同一行显示 */
+.header-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+/* 过滤按钮的样式 */
+
+.filter-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.filter-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 50px;
+}
+
+.filter-icon {
+    width: 24px;
+    height: 24px;
+}
+
+
+
+
+.screen {
+    position: relative;
+    width: 100%;
+    height: 909px;
+    background-color: #fafbfc;
+    overflow: hidden;
+    border: 1px solid;
+    border-color: #32ade6;
+}
+
+.screen .filter-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 82px); /* 扣除導航欄的高度 */
+}
+
+.screen .filter-button {
+    all: unset;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.screen .filter-icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* 浮現視窗樣式 */
+.modal {
+    display: none; /* 隱藏視窗 */
+    position: fixed; /* 固定定位 */
+    z-index: 1; /* 保持在最上層 */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4); /* 半透明背景 */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 10px;
+}
+
+.close {
+    color: #1484ff;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-header {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.modal-body {
+    margin-bottom: 20px;
+}
+
+.modal-footer {
+    display: flex; /* 使用Flexbox佈局 */
+    justify-content: center; /* 子元素在容器中水平居中 */
+    gap: 10px; /* 子元素之間的間距為10像素 */
+}
+
+.button {
+    padding: 10px 20px; /* 內邊距上下10像素，左右20像素 */
+    border: none; /* 無邊框 */
+    border-radius: 5px; /* 邊框圓角5像素 */
+    cursor: pointer; /* 游標變成指針 */
+    width: 120px; /* 按鈕寬度為120像素 */
+    text-align: center; /* 文字居中對齊 */
+}
+
+.button.cancel {
+    color: #1484ff;
+}
+
+.button.confirm {
+    background-color: #1484ff;
+    color: white;
+}
+
+.filter-options {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+}
+
+.filter-options label {
+    flex: 1;
+    text-align: center;
+    color: #1484ff;
+    border: 1px solid #148ff1; /* 1像素寬的灰色邊框 */
+    border-radius: 5px; /* 邊框圓角5像素 */
+    padding: 10px; /* 內邊距10像素 */
+    margin: 0 5px; /* 左右邊距5像素 */
+}
+
+

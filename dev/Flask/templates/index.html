@@ -25,12 +25,47 @@
         </div>
     </nav>
 
-    
+
     <!-- Toast container -->
     <div id="toast" class="toast"> text</div>
 
     <div class="container">
-        <h1>我的單字書</h1>
+        <div class="header-container">
+            <h1>我的單字書</h1>
+            <!-- 新增篩選按鈕區塊 -->
+            <div class="filter-container">
+                <button class="filter-button" onclick="openModal()">
+                    <img class="filter-icon" src="static/img/filter.svg" alt="Filter" />
+                </button>
+            </div>
+        </div>
+
+        <!-- 浮現視窗 -->
+        <div id="filterModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <div class="modal-header">篩選單字</div>
+                <div class="modal-body">
+                    <div>單字儲存日</div>
+                    <label for="startDate">從:</label>
+                    <input type="date" id="startDate" name="startDate">
+                    <label for="endDate">至:</label>
+                    <input type="date" id="endDate" name="endDate">
+                    <div>單字難易度</div>
+                    <div class="filter-options">
+                        <label><input type="checkbox" name="difficulty" value="1"> 困難 (不熟悉的)</label>
+                        <label><input type="checkbox" name="difficulty" value="2"> 中等 (有印象的)</label>
+                        <label><input type="checkbox" name="difficulty" value="3"> 簡單 (已記住單字)</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="button cancel" onclick="closeModal()">取消</button>
+                    <button class="button confirm">送出</button>
+                </div>
+            </div>
+        </div>
+
+
         
         <div class="search-bar">
             <form id="word-form" action="/" method="POST">
