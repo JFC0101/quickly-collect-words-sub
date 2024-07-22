@@ -1,27 +1,4 @@
-"""
-import sqlite3
 
-connection = sqlite3.connect('word.db')
-
-cursor = connection.cursor()
-
-
-
-cursor.execute("create table word ( id INT AUTO_INCREMENT, word VARCHAR(50) UNIQUE, pronunciation VARCHAR(50),	definition VARCHAR(50), example VARCHAR(50), difficulty VARCHAR(50))")
-
-release_list = [
-    (1, 'explore', '[ɪkˈsplɔr]','探索', 'The best way to explore the countryside is on foot.'),
-	(2, 'placatory', '[pləˈkeɪtəri]', '撫慰的', 'The tone of her voice was placatory.')
-]
-
-cursor.executemany("insert into word values(?,?,?,?,?,?)", release_list)
-
-for row in cursor.execute("select * from word"):
-    print(row)
-
-
-connection.close() 
-"""
 
 import sqlite3
 

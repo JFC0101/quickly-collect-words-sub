@@ -106,30 +106,3 @@ function uploadFile() {
         alert('請選擇檔案');
     }
 }
-
-
-
-
-function deleteWord(word) {
-    // 获取所有单词项元素
-    const wordItems = document.querySelectorAll('.word-item');
-    
-    wordItems.forEach(item => {
-        // 找到每个单词项的文本
-        const wordText = item.querySelector('.word-text').textContent;
-        
-        // 比较文本内容是否与要删除的单词匹配
-        if (wordText === word) {
-            // 移除匹配的单词项
-            item.remove();
-        }
-    });
-}
-
-
-
-
-
-
-
-
