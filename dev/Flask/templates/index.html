@@ -50,12 +50,16 @@
                 <span class="close" onclick="closeModal()">&times;</span>
                 <div class="modal-header">篩選單字</div>
                 <div class="modal-body">
-                    <div>單字儲存日</div>
-                    <label for="startDate">從:</label>
-                    <input type="date" id="startDate" name="startDate" value="{{ start_date }}">
-                    <label for="endDate">至:</label>
-                    <input type="date" id="endDate" name="endDate" value="{{ end_date }}">
-                    <div>單字難易度</div>
+
+                    <div class="member-role">單字儲存日</div>
+                    <div class="filter-options-date">
+                        <label for="startDate">從:</label>
+                        <input type="date" id="startDate" name="startDate" value="{{ start_date }}">
+                        <label for="endDate">至:</label>
+                        <input type="date" id="endDate" name="endDate" value="{{ end_date }}">
+                    </div>
+
+                    <div class="member-role">單字難易度</div>
                     <div class="filter-options">
                         <label><input type="checkbox" name="difficulty" value="1" {% if 1 in difficulties %}checked{% endif %}> 困難 (不熟悉的)</label>
                         <label><input type="checkbox" name="difficulty" value="2" {% if 2 in difficulties %}checked{% endif %}> 中等 (有印象的)</label>
@@ -63,8 +67,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="button cancel" onclick="closeModal()">取消</button>
-                    <button class="button confirm" onclick="applyFilter()">送出</button>
+                    <button class="button-cancel" onclick="closeModal()">取消</button>
+                    <button class="button" onclick="applyFilter()">送出</button>
                 </div>
             </div>
         </div>
@@ -73,8 +77,8 @@
         <div class="search-bar">
             <form id="word-form" action="/" method="POST">
                 <input type="text" id="word" name="word" placeholder="輸入欲新增或查詢的單字">
-                <button class="main-button" type="submit">送出</button>
-                <button class="main-button" type="button" onclick="window.location.href='/upload'">拍照新增單字</button>
+                <button class="button" type="submit">搜尋</button>
+                <button class="button" type="button" onclick="window.location.href='/upload'">拍照新增單字</button>
             </form>
         </div>
         <div class="search-bar">
@@ -83,11 +87,13 @@
 
         <div class="word-list">
             {% if word %}
+            <h2>查詢結果</h2>
             <div class="word-card ">
                 <div class="word-header">
                     <div>{{ word.word }}</div>                
                 </div>
                 <div class="word-details">
+                    
                     <div>KK {{ word.pronunciation }}</div>
                     <div>型態 {{ word.definition }}</div>
                 </div>
@@ -150,48 +156,41 @@
     
         //负责从前端页面获取用户设置的筛选条件，发送这些条件到服务器进行数据过滤，然后更新页面上的词汇列表。
         function applyFilter() {
-            //startDate 和 endDate 是从 HTML 输入字段中获取的用户设置的日期值。
+            // 获取用户选择的日期
             const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value + 'T23:59:59'; // 在日期后添加时间部分
+            const endDate = document.getElementById('endDate').value;
+
+            // 处理日期格式
+            const startDateTime = startDate + 'T00:00:00'; // 转换为 yyyy-mm-ddT00:00:00
+            const endDateTime = endDate + 'T23:59:59';   // 转换为 yyyy-mm-ddT23:59:59
+            
             //选择所有被选中的复选框，然后 Array.from 将其转换为数组，map(el => el.value) 提取每个复选框的值
             const difficulties = Array.from(document.querySelectorAll('input[name="difficulty"]:checked')).map(el => el.value);
     
-
-            // Show loading spinner
-            document.getElementById('loadingSpinner').style.display = 'flex';
-
-            //创建一个新的 XMLHttpRequest 对象，用于向服务器发送 HTTP 请求
-            const xhr = new XMLHttpRequest();
-            //配置请求方式为 POST，目标 URL 为 /filter，true 表示异步请求。
-            xhr.open('POST', '/filter', true);
-            //设置请求头，告诉服务器请求体的格式是 JSON
-            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-            //是一个回调函数，当请求完成时调用
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    // 假设服务器返回的格式是 JSON 数组
-                    const response = JSON.parse(xhr.responseText);
-                    updateWordList(response.words);
-                    closeModal();
-                } else {
-                    console.error('Error fetching filtered data:', xhr.statusText);
-                }
-
-                // Hide loading spinner
-                document.getElementById('loadingSpinner').style.display = 'none';
-            };
-            //xhr.send 发送请求体到服务器。请求体是一个 JSON 字符串，包含筛选条件：startDate、endDate 和 difficulties。
-            xhr.send(JSON.stringify({
-                startDate: startDate,
-                endDate: endDate,
-                difficulties: difficulties
-            }));
+            // 发送 POST 请求
+            fetch('/filter', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    startDate: startDateTime,
+                    endDate: endDateTime,
+                    difficulties: difficulties
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 处理响应数据
+                updateWordList(data.words);
+                closeModal();
+            })
+            .catch(error => {
+                console.error('Error fetching filtered data:', error);
+            });
         }
-    
-        // 初始化页面加载时的筛选设置
-        document.addEventListener('DOMContentLoaded', function() {
-            loadFilterSettings();
-        });
+            
+
     
         function loadFilterSettings() {
             const startDate = document.getElementById('startDate');
@@ -212,6 +211,11 @@
             });
         }
     
+        // 初始化页面加载时的筛选设置
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFilterSettings();
+        });
+
         function updateWordList(words) {
             const wordContainer = document.getElementById('wordContainer');
             wordContainer.innerHTML = '';

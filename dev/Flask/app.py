@@ -1,4 +1,3 @@
-#比較複雜的版本，包含可以點新增單字，就把 gemini 查到的單字內容insert into資料庫
 from flask import Flask, request, render_template, redirect, url_for, jsonify
 import sqlite3
 import google.generativeai as genai
@@ -78,7 +77,6 @@ def insert_word_details(word, pronunciation, definition, example):
 # Function to fetch all words from the database
 def fetch_all_words(start_date=None, end_date=None, difficulties=None):
     if start_date is None or end_date is None:
-        # Default filtering
         start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d %H:%M:%S')
         end_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     if difficulties is None:
@@ -94,13 +92,11 @@ def fetch_all_words(start_date=None, end_date=None, difficulties=None):
         """, (start_date, end_date, *difficulties))
         words = cursor.fetchall()
         conn.close()
-        print(f"Fetched words: {words}")  # Debug statement
-
         return words
     
     except Exception as e:
         print(f"Error: {e}")
-        words = []
+        return []
 
 def fetch_word_details(word):
     conn = sqlite3.connect('word.db')
@@ -115,27 +111,17 @@ def fetch_word_details(word):
 def fetch_filtered_words(start_date, end_date, difficulties):
     conn = sqlite3.connect('word.db')
     cursor = conn.cursor()
-
-    #一个总是为真的条件，方便动态添加其他筛选条件
-    query = "SELECT * FROM word WHERE 1=1"
-    params = []
+    query = "SELECT * FROM word WHERE created_at BETWEEN ? AND ?"
+    params = [start_date, end_date]
     
-    if start_date:
-        query += " AND created_at >= ?"
-        params.append(start_date)
-    if end_date:
-        query += " AND created_at <= ?"
-        params.append(end_date)
     if difficulties:
         query += " AND difficulty IN ({})".format(','.join(['?'] * len(difficulties)))
         params.extend(difficulties)
     
-    #将 params 作为参数传递给 SQL 查询
     cursor.execute(query, params)
     words = cursor.fetchall()
     conn.close()
     return words
-
 
 @app.route('/filter', methods=['POST'])
 def filter_words():
@@ -192,10 +178,13 @@ def index():
     word_in_db = False
 
     # 设置默认的筛选条件：60天前到当前日期的时间范围，以及所有难度级别（1, 2, 3）。
-    start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d 00:00:00')
+    start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
     end_date = datetime.now().strftime('%Y-%m-%d 23:59:59')
     difficulties = [1, 2, 3]
-                                
+
+    end_date_display = datetime.now().strftime('%Y-%m-%d')
+
+                            
     if request.method == 'POST':  # Handle POST request
         if 'word' in request.form:
             # 当请求中包含 'word' 表单字段时，执行单词搜索逻辑
@@ -234,17 +223,20 @@ def index():
             # 处理 GET 请求，渲染模板并返回默认单词列表和其他变量。
             #return render_template('index.html', words=words, word=word, word_in_db=word_in_db)
     words = fetch_all_words(start_date=start_date, end_date=end_date, difficulties=difficulties)
-    return render_template('index.html', words=words, word=word, word_in_db=word_in_db, new_words=new_words, start_date=start_date, end_date=end_date, difficulties=difficulties)
+    return render_template('index.html', words=words, word=word, word_in_db=word_in_db, new_words=new_words, start_date=start_date, end_date=end_date_display, difficulties=difficulties)
 
 
-# Add a new word to the database
 @app.route('/add_word', methods=['POST'])
 def add_word():
     word = request.form['word']
     word_details = get_word_details(word)  # 呼叫 get_word_details 函數從 Google Gemini API 獲取單字詳細信息
     if word_details:
         insert_word_details(word_details['word'], word_details['pronunciation'], word_details['definition'], word_details['example'])  # 將獲取到的單字詳細信息插入資料庫
-    return redirect(url_for('index'))  # 重定向到首頁
+    
+    new_words = [word]  # 假设添加的单词就是这个
+    toast_message = '新增成功'
+    query_string = f'/?new_words={",".join(new_words)}&toast={toast_message}'
+    return redirect(query_string)  # 重定向到首页并附带参数
 
 
 
@@ -339,7 +331,7 @@ def upload():
         if uploaded_file:
             # Process uploaded file if needed
             # Example: recognizing words from the image
-            words = ['show', 'tomorrow','maybe','explore']
+            words = ['show', 'nothing','maybe','explore']
             image_name = uploaded_file.filename
             uploaded_file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_name))
 
