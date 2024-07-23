@@ -3,6 +3,8 @@ from flask import Flask, request, render_template, redirect, url_for, jsonify
 import sqlite3
 import google.generativeai as genai
 import os
+from datetime import datetime, timedelta
+
 
 app = Flask(__name__)
 
@@ -74,13 +76,31 @@ def insert_word_details(word, pronunciation, definition, example):
     conn.close()
 
 # Function to fetch all words from the database
-def fetch_all_words():
-    conn = sqlite3.connect('word.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM word ORDER BY id DESC")
-    words = cursor.fetchall()
-    conn.close()
-    return words
+def fetch_all_words(start_date=None, end_date=None, difficulties=None):
+    if start_date is None or end_date is None:
+        # Default filtering
+        start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d %H:%M:%S')
+        end_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    if difficulties is None:
+        difficulties = [1, 2, 3]
+
+    try:
+        conn = sqlite3.connect('word.db')
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT * FROM word
+            WHERE created_at BETWEEN ? AND ?
+            AND difficulty IN (?, ?, ?)
+        """, (start_date, end_date, *difficulties))
+        words = cursor.fetchall()
+        conn.close()
+        print(f"Fetched words: {words}")  # Debug statement
+
+        return words
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        words = []
 
 def fetch_word_details(word):
     conn = sqlite3.connect('word.db')
@@ -89,6 +109,62 @@ def fetch_word_details(word):
     word_details = cursor.fetchone()
     conn.close()
     return word_details
+
+
+# Function to fetch filtered words from the database
+def fetch_filtered_words(start_date, end_date, difficulties):
+    conn = sqlite3.connect('word.db')
+    cursor = conn.cursor()
+
+    #一个总是为真的条件，方便动态添加其他筛选条件
+    query = "SELECT * FROM word WHERE 1=1"
+    params = []
+    
+    if start_date:
+        query += " AND created_at >= ?"
+        params.append(start_date)
+    if end_date:
+        query += " AND created_at <= ?"
+        params.append(end_date)
+    if difficulties:
+        query += " AND difficulty IN ({})".format(','.join(['?'] * len(difficulties)))
+        params.extend(difficulties)
+    
+    #将 params 作为参数传递给 SQL 查询
+    cursor.execute(query, params)
+    words = cursor.fetchall()
+    conn.close()
+    return words
+
+
+@app.route('/filter', methods=['POST'])
+def filter_words():
+
+    #从请求体中获取 JSON 数据，并提取 startDate、endDate 和 difficulties
+    data = request.get_json()
+    start_date = data.get('startDate')
+    end_date = data.get('endDate')
+    difficulties = data.get('difficulties', [])
+
+    words = fetch_filtered_words(start_date, end_date, difficulties)
+    
+    # 打印返回的数据
+    print(f"Filtered words: {words}")
+
+    #处理查询结果，将每个单词的信息格式化为 JSON 对象，包括 word、pronunciation、definition、difficulty、difficulty_text 和 type
+    response = {'words': [
+        {
+            'word': word[1],
+            'pronunciation': word[2],
+            'definition': word[4],
+            'difficulty': word[5],
+            'difficulty_text': '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單'),
+            'type': word[3]
+        } for word in words
+    ]}
+    
+    return jsonify(response)
+
 
 
 
@@ -109,55 +185,57 @@ def update_difficulty():
     return jsonify({'message': '難易度已更新'}), 200
 
 
-
-
-
-# Home page, display all words and search functionality
 @app.route('/', methods=['GET', 'POST'])
 def index():
     new_words = request.args.get('new_words', '').split(',')
-    ##error = None (改由前端判斷與給 error)
     word = None  # Initialize word to None
     word_in_db = False
 
-    
-    if request.method == 'POST':  #處理 POST 請求
+    # 设置默认的筛选条件：60天前到当前日期的时间范围，以及所有难度级别（1, 2, 3）。
+    start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d 00:00:00')
+    end_date = datetime.now().strftime('%Y-%m-%d 23:59:59')
+    difficulties = [1, 2, 3]
+                                
+    if request.method == 'POST':  # Handle POST request
+        if 'word' in request.form:
+            # 当请求中包含 'word' 表单字段时，执行单词搜索逻辑
+            word_to_search = request.form.get('word')
+            if not word_to_search or not all(char.isalpha() or char == ',' for char in word_to_search):
+                error = "請輸入有效的英文字符或逗號。"
+                #return render_template('index.html', words=fetch_all_words(), error=error)
 
-        word_to_search = request.form.get('word')
-        # 仅在前端验证失效时，进行后端验证
-        if not word_to_search or not all(char.isalpha() or char == ',' for char in word_to_search):
-                    error = "請輸入有效的英文字符或逗號。"
-                    ##return render_template('index.html', words=fetch_all_words(), error=error) (改由前端判斷與給 error，如果要前端能接收後端的 Error 要重新寫 index.heml 內有接收的位置)
+            try:
+                # 连接到数据库，并查询单词详情。
+                conn = sqlite3.connect('word.db')
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM word WHERE word=?", (word_to_search,))
+                word_details = cursor.fetchone()
+                conn.close()
 
+                if word_details:
+                    word = {
+                        'word': word_details[1],
+                        'pronunciation': word_details[2],
+                        'definition': word_details[3],
+                        'example': word_details[4],
+                        'difficulty': word_details[5]
+                    }
+                    word_in_db = True
+                else:
+                    # 如果没有在数据库中找到单词，则调用 `get_word_details` 获取单词的详细信息。
+                    word = get_word_details(word_to_search)
+                    
+                    if word:
+                        word_in_db = False
 
-        try:
-            conn = sqlite3.connect('word.db')
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM word WHERE word=?", (word_to_search,)) #連接資料庫並查詢該單字是否存在於資料庫中
-            word_details = cursor.fetchone()
-            conn.close()
+            except Exception as e:
+                print(f"Error: {e}")
 
-            if word_details:  #如果資料庫中找到該單字，將其詳細信息存儲在 word 變數中
-                word = {
-                    'word': word_details[1],
-                    'pronunciation': word_details[2],
-                    'definition': word_details[3],
-                    'example': word_details[4]
-                }
-                word_in_db = True
-            else:
-                word = get_word_details(word_to_search)  # Use get_word_details function here 如果資料庫中未找到該單字，使用 get_word_details 函數從 Google Gemini API 獲取單字的詳細信息。
+            # 处理 GET 请求，渲染模板并返回默认单词列表和其他变量。
+            #return render_template('index.html', words=words, word=word, word_in_db=word_in_db)
+    words = fetch_all_words(start_date=start_date, end_date=end_date, difficulties=difficulties)
+    return render_template('index.html', words=words, word=word, word_in_db=word_in_db, new_words=new_words, start_date=start_date, end_date=end_date, difficulties=difficulties)
 
-                if word: 
-                    word_in_db = False
-            
-        except Exception as e:
-            print(f"Error: {e}")
-
-        # 这里不传递 error 参数
-        return render_template('index.html', words=fetch_all_words(), word=word, word_in_db=word_in_db) #渲染模板 index.html，並將所有單字（從資料庫中獲取）和查詢結果（如果有）傳遞到前端。
-
-    return render_template('index.html', words=fetch_all_words(), word=word, word_in_db=word_in_db, new_words=new_words) #
 
 # Add a new word to the database
 @app.route('/add_word', methods=['POST'])
@@ -261,7 +339,7 @@ def upload():
         if uploaded_file:
             # Process uploaded file if needed
             # Example: recognizing words from the image
-            words = ['show', 'choose','maybe','explore']
+            words = ['show', 'tomorrow','maybe','explore']
             image_name = uploaded_file.filename
             uploaded_file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_name))
 

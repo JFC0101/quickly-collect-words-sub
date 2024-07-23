@@ -25,6 +25,10 @@
         </div>
     </nav>
 
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+        <div class="spinner"></div>
+    </div>
 
     <!-- Toast container -->
     <div id="toast" class="toast"> text</div>
@@ -48,29 +52,28 @@
                 <div class="modal-body">
                     <div>單字儲存日</div>
                     <label for="startDate">從:</label>
-                    <input type="date" id="startDate" name="startDate">
+                    <input type="date" id="startDate" name="startDate" value="{{ start_date }}">
                     <label for="endDate">至:</label>
-                    <input type="date" id="endDate" name="endDate">
+                    <input type="date" id="endDate" name="endDate" value="{{ end_date }}">
                     <div>單字難易度</div>
                     <div class="filter-options">
-                        <label><input type="checkbox" name="difficulty" value="1"> 困難 (不熟悉的)</label>
-                        <label><input type="checkbox" name="difficulty" value="2"> 中等 (有印象的)</label>
-                        <label><input type="checkbox" name="difficulty" value="3"> 簡單 (已記住單字)</label>
+                        <label><input type="checkbox" name="difficulty" value="1" {% if 1 in difficulties %}checked{% endif %}> 困難 (不熟悉的)</label>
+                        <label><input type="checkbox" name="difficulty" value="2" {% if 2 in difficulties %}checked{% endif %}> 中等 (有印象的)</label>
+                        <label><input type="checkbox" name="difficulty" value="3" {% if 3 in difficulties %}checked{% endif %}> 簡單 (已記住單字)</label>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button class="button cancel" onclick="closeModal()">取消</button>
-                    <button class="button confirm">送出</button>
+                    <button class="button confirm" onclick="applyFilter()">送出</button>
                 </div>
             </div>
         </div>
 
 
-        
         <div class="search-bar">
             <form id="word-form" action="/" method="POST">
-                <input type="text" id="word" name="word" placeholder="輸入欲查詢的單字">
-                <button class="main-button" type="submit">查詢</button>
+                <input type="text" id="word" name="word" placeholder="輸入欲新增或查詢的單字">
+                <button class="main-button" type="submit">送出</button>
                 <button class="main-button" type="button" onclick="window.location.href='/upload'">拍照新增單字</button>
             </form>
         </div>
@@ -83,7 +86,6 @@
             <div class="word-card ">
                 <div class="word-header">
                     <div>{{ word.word }}</div>                
-                    <div class="difficulty {{ 'difficult' if word[5] == 1 else ('medium' if word[5] == 2 else 'easy') }}">{{ '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單') }}</div>
                 </div>
                 <div class="word-details">
                     <div>KK {{ word.pronunciation }}</div>
@@ -103,36 +105,169 @@
 
             
 
-            {% if words %}
-
-            <div>
-                {% for word in words %}
-                    <a href="{{ url_for('word_detail', word=word[1]) }}" class="word-link">
-                        <div class="word-card {{ 'new-word' if word[1] in new_words else '' }}">
-                            <div class="word-header">
-                                <div>{{ word[1] }}</div>
-                                <div class="difficulty {{ 'difficult' if word[5] == 1 else ('medium' if word[5] == 2 else 'easy') }}">{{ '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單') }}</div>
+            <div id="wordContainer">
+                {% if words %}
+                <div>
+                    {% for word in words %}
+                        <a href="{{ url_for('word_detail', word=word[1]) }}" class="word-link">
+                            <div class="word-card {{ 'new-word' if word[1] in new_words else '' }}">
+                                <div class="word-header">
+                                    <div>{{ word[1] }}</div>
+                                    <div class="difficulty {{ 'difficult' if word[5] == 1 else ('medium' if word[5] == 2 else 'easy') }}">{{ '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單') }}</div>
+                                </div>
+                                <div class="word-details">
+                                    <div>KK {{ word[2] }}</div>
+                                    <div>型態 {{ word[3] }}</div>
+                                </div>
+                                <div class="word-meaning">解釋 {{ word[4] }}</div>
                             </div>
-                            <div class="word-details">
-                                <div>KK {{ word[2] }}</div>
-                                <div>型態 {{ word[3] }}</div>
-                            </div>
-                            <div class="word-meaning">解釋 {{ word[4] }}</div>
-                        </div>
-                    </a>
-                {% endfor %}
+                        </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
-
-
-            {% endif %}
-        </div>
     </div>
 
 
 
 
+    <script>
+        // Filter popup functionality
+        function openModal() {
+            document.getElementById("filterModal").style.display = "block";
+        }
+    
+        function closeModal() {
+            document.getElementById("filterModal").style.display = "none";
+        }
+    
+        window.onclick = function(event) {
+            var modal = document.getElementById("filterModal");
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    
+        //负责从前端页面获取用户设置的筛选条件，发送这些条件到服务器进行数据过滤，然后更新页面上的词汇列表。
+        function applyFilter() {
+            //startDate 和 endDate 是从 HTML 输入字段中获取的用户设置的日期值。
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value + 'T23:59:59'; // 在日期后添加时间部分
+            //选择所有被选中的复选框，然后 Array.from 将其转换为数组，map(el => el.value) 提取每个复选框的值
+            const difficulties = Array.from(document.querySelectorAll('input[name="difficulty"]:checked')).map(el => el.value);
+    
 
+            // Show loading spinner
+            document.getElementById('loadingSpinner').style.display = 'flex';
 
+            //创建一个新的 XMLHttpRequest 对象，用于向服务器发送 HTTP 请求
+            const xhr = new XMLHttpRequest();
+            //配置请求方式为 POST，目标 URL 为 /filter，true 表示异步请求。
+            xhr.open('POST', '/filter', true);
+            //设置请求头，告诉服务器请求体的格式是 JSON
+            xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+            //是一个回调函数，当请求完成时调用
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    // 假设服务器返回的格式是 JSON 数组
+                    const response = JSON.parse(xhr.responseText);
+                    updateWordList(response.words);
+                    closeModal();
+                } else {
+                    console.error('Error fetching filtered data:', xhr.statusText);
+                }
+
+                // Hide loading spinner
+                document.getElementById('loadingSpinner').style.display = 'none';
+            };
+            //xhr.send 发送请求体到服务器。请求体是一个 JSON 字符串，包含筛选条件：startDate、endDate 和 difficulties。
+            xhr.send(JSON.stringify({
+                startDate: startDate,
+                endDate: endDate,
+                difficulties: difficulties
+            }));
+        }
+    
+        // 初始化页面加载时的筛选设置
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFilterSettings();
+        });
+    
+        function loadFilterSettings() {
+            const startDate = document.getElementById('startDate');
+            const endDate = document.getElementById('endDate');
+            const difficultyCheckboxes = document.querySelectorAll('input[name="difficulty"]');
+
+            // Get values from localStorage if they exist, otherwise use default values
+            const storedStartDate = localStorage.getItem('startDate');
+            const storedEndDate = localStorage.getItem('endDate');
+            const storedDifficulties = JSON.parse(localStorage.getItem('difficulties'));
+
+            startDate.value = storedStartDate || '{{ start_date }}';
+            endDate.value = storedEndDate || '{{ end_date }}';
+
+            const difficulties = storedDifficulties || [1, 2, 3];
+            difficultyCheckboxes.forEach(checkbox => {
+                checkbox.checked = difficulties.includes(parseInt(checkbox.value));
+            });
+        }
+    
+        function updateWordList(words) {
+            const wordContainer = document.getElementById('wordContainer');
+            wordContainer.innerHTML = '';
+    
+            if (words.length === 0) {
+                wordContainer.innerHTML = '<p>No words found.</p>';
+            } else {
+                words.forEach(word => {
+                    const wordElement = document.createElement('div');
+                    wordElement.className = 'word-card';
+                    wordElement.innerHTML = `
+                        <a href="/word?word=${word.word}" class="word-link">
+                            <div class="word-header">
+                                <div>${word.word}</div>
+                                <div class="difficulty ${getDifficultyClass(word.difficulty)}">${getDifficultyText(word.difficulty)}</div>
+                            </div>
+                            <div class="word-details">
+                                <div>KK ${word.pronunciation}</div>
+                                <div>型態 ${word.type}</div>
+                            </div>
+                            <div class="word-meaning">解釋 ${word.definition}</div>
+                        </a>
+                    `;
+                    wordContainer.appendChild(wordElement);
+                });
+            }
+        }
+    
+        function getDifficultyClass(difficulty) {
+            switch (difficulty) {
+                case 1: return 'difficult';
+                case 2: return 'medium';
+                case 3: return 'easy';
+                default: return '';
+            }
+        }
+    
+        function getDifficultyText(difficulty) {
+            switch (difficulty) {
+                case 1: return '困難';
+                case 2: return '中等';
+                case 3: return '簡單';
+                default: return '';
+            }
+        }
+    
+        // Ensure at least one difficulty checkbox is selected
+        document.querySelectorAll("input[name='difficulty']").forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                if (!document.querySelector("input[name='difficulty']:checked")) {
+                    document.querySelectorAll("input[name='difficulty']").forEach(cb => cb.checked = true);
+                }
+            });
+        });
+    </script>
+    
 
 </body>
 </html>

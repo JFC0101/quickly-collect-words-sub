@@ -39,19 +39,3 @@ function showToast(message) {
 }
 
 
-
-//filter popup
-function openModal() {
-    document.getElementById("filterModal").style.display = "block";
-}
-
-function closeModal() {
-    document.getElementById("filterModal").style.display = "none";
-}
-
-window.onclick = function(event) {
-    var modal = document.getElementById("filterModal");
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
-}

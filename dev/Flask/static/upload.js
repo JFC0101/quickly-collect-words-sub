@@ -9,10 +9,13 @@ document.addEventListener("DOMContentLoaded", function() {
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(function(stream) {
                 video.srcObject = stream;
+                video.play(); // 确保视频播放
             })
             .catch(function(error) {
                 console.error("Error accessing webcam: " + error);
             });
+    } else {
+        console.error("getUserMedia not supported on your browser!");
     }
 
     // Update file name on file selection
@@ -37,9 +40,12 @@ function captureAndUpload() {
 
     // Convert canvas to blob and upload
     canvas.toBlob(function(blob) {
-        uploadBlob(blob);
+        if(blob) {
+            uploadBlob(blob);
+        } else {
+            console.error('Failed to convert canvas to blob.');
+        }
     }, 'image/jpeg');
-    
 }
 
 
@@ -106,3 +112,4 @@ function uploadFile() {
         alert('請選擇檔案');
     }
 }
+

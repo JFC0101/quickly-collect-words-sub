@@ -24,7 +24,10 @@
         </div>
     </nav>
 
-    
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+        <div class="spinner"></div>
+    </div>
 
     <div class="container">
         <h1>單字預覽</h1>
@@ -58,6 +61,10 @@
                 words.push(element.textContent.trim());
             });
 
+            // Show loading spinner
+            document.getElementById('loadingSpinner').style.display = 'flex';
+
+
             fetch('/process_words', {
                 method: 'POST',
                 headers: {
@@ -83,6 +90,8 @@
             .catch(error => {
                 console.error('Error:', error);
             });
+
+            
         }
     </script>
 
