@@ -70,7 +70,7 @@ def get_word_details(word):
     return None
 
 #------------------------#
-#這個 function 是去資料庫查找符合篩選條件資格的單字，所以 index() 或 filter() function 都有呼叫這個函數
+#這個 fetch_filtered_words() function 是去資料庫查找符合篩選條件資格的單字，所以 index() 或 filter() function 都有呼叫這個函數
 #原本是預計使用 fetch_all-words()，但因為做了篩選功能，所以每次抓資料庫單字時，都是依據篩選結果(start_date, end_date, difficulties)去查找單字
 def fetch_filtered_words(start_date, end_date, difficulties):
     conn = sqlite3.connect('word.db')
@@ -93,14 +93,11 @@ def index():
         start_date = data.get('startDate')
         end_date = data.get('endDate')
         difficulties = data.get('difficulties')
-        new_words = data.get('newWords', '').split(',')  # 从 POST 请求体中获取 new_words
-        print('new_words=',new_words)
+
     else:
         start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d') + 'T00:00:00'
         end_date = datetime.now().strftime('%Y-%m-%d') + 'T23:59:59'
         difficulties = [1, 2, 3]
-        new_words = request.args.get('new_words', '').split(',')  # 从 URL 参数获取 new_words
-
     
     filtered_words = fetch_filtered_words(start_date, end_date, difficulties)
 
@@ -115,13 +112,12 @@ def index():
                 'difficulty_text': '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單'),
                 'type': word[3]
             } for word in filtered_words],
-            'new_words': new_words,
             'start_date': start_date,
             'end_date': end_date,
             'difficulties': difficulties
         })
     else:
-        return render_template('index.html', words=filtered_words, new_words=new_words, start_date=start_date, end_date=end_date, difficulties=difficulties)
+        return render_template('index.html', words=filtered_words, start_date=start_date, end_date=end_date, difficulties=difficulties)
 
 
 
@@ -240,7 +236,7 @@ def process_words():
                 word = get_word_details(word_to_search)
                 if word:
                     cursor.execute("INSERT INTO word (word, pronunciation, definition, example, difficulty) VALUES (?, ?, ?, ?, ?)",
-                                   (word['word'], word['pronunciation'], word['definition'], word['example'], 3))
+                                   (word['word'], word['pronunciation'], word['definition'], word['example'], 1))
                     conn.commit()
                     processed_words.append(word_to_search)
 
@@ -256,8 +252,8 @@ def process_words():
 
 
 #------------------------#
-#當upload.html點擊"擷取上傳"就會把圖片存起來，命名為capture.jpg
-@app.route('/upload_capture', methods=['POST'])
+#這個沒用到 當upload.html點擊"擷取上傳"就會把圖片存起來，命名為capture.jpg
+'''@app.route('/upload_capture', methods=['POST'])
 def upload_capture():
     # 保存捕获的 JPEG 图片
     file = request.files.get('file')
@@ -265,6 +261,7 @@ def upload_capture():
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'capture.jpg'))
         return jsonify({'success': True})
     return jsonify({'error': 'No file uploaded'})
+    '''
 
 
 #处理文件上传请求，保存上传的文件到指定的文件夹中
@@ -286,24 +283,28 @@ def upload_file():
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST':
+        #這個應該是把處理過的圖片呼叫出來
         uploaded_file = request.files.get('file')
 
         if uploaded_file:
             # Process uploaded file if needed
             # Example: recognizing words from the image
-            words = ['show', 'nothing','maybe','explore']
+            words = ['success','failure','nice','explore']
             image_name = uploaded_file.filename
-            uploaded_file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_name))
 
             # Redirect to word preview page with image and words data
             return jsonify({'image': image_name, 'words': words})  #upload.js 接收了 json 內容就會將畫面導到 word-preview 頁面
 
+    #如果不是 post 就是單純的打開 upload 畫面
     return render_template('upload.html')
 
-#呈現圖片的單字、上傳的圖片 (應該要標註哪些地方有抓到了)
+
+
+#呈現圖片的單字、處理過的圖片 (應該要標註哪些地方有抓到了)
 #[尚未完成] 實際上圖片應該是 Jeff 處理完的圖片放到 word-preview 畫面中，但目前是抓上傳的圖片
 @app.route('/word-preview')
 def word_preview():
+    #根據從 URL 參數獲取的圖像名稱和單詞列表
     image_name = request.args.get('image')
     words = request.args.get('words').split(',')
     return render_template('word-preview.html', image_name=image_name, words=words)

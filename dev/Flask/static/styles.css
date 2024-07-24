@@ -1,32 +1,3 @@
-/* Loading Spinner Styles */
-.loading-spinner {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999; /* Ensure it's on top of other content */
-}
-
-.spinner {
-    border: 8px solid #f3f3f3;
-    border-top: 8px solid #3498db;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-
 body {
     font-family: Arial, sans-serif;
     background: #FAFBFC;
@@ -116,6 +87,13 @@ h1 {
     font-weight: 700;
     color: #333;
 }
+
+
+h2 {
+    text-align: center;
+}
+
+
 /* Search bar styles */
 .search-bar {
     display: flex;
@@ -179,21 +157,13 @@ h1 {
 
 
 
-
-
-
-
-
-
-
-
 .word-link {
     text-decoration: none;
 }
 
 
 .word-list {
-    max-width: 1148px;
+    max-width: 1110px;
     display: inline-flex;
     flex-direction: column;
     justify-content: center; /* This centers the content inside the team-list if there's any */
@@ -275,7 +245,6 @@ h1 {
 
 /* upload.html*/
 .upload-section {
-    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -308,18 +277,21 @@ h1 {
 
 /* 按钮样式 */
 .button {
-    padding: 10px 20px;
+    padding: 10px 24px;
     border: none;
     background-color: #007bff;
     color: white;
     border-radius: 4px;
     cursor: pointer;
-    margin: 5px; /* Reduced margin for better spacing */
+    margin: 0 5px 0 0; /* Reduced margin for better spacing */
     text-align: center; /* 文字居中對齊 */
 }
+
 .button:hover {
     background-color: #0056b3;
 }
+
+
 
 
 .button-big {
@@ -345,7 +317,6 @@ h1 {
     color: #1484ff;
     border-radius: 4px;
     cursor: pointer;
-    margin: 5px; /* Reduced margin for better spacing */
     text-align: center; /* 文字居中對齊 */
 }
 
@@ -353,6 +324,18 @@ h1 {
     color: #1484ff;
     background-color: #ccc;
 }
+
+/* custom-file-upload 样式 */
+.custom-file-upload {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 1px #1484FF solid;
+    cursor: pointer;
+    color: #1484FF;
+    font-size: 16px;
+}
+
+
 
 
 
@@ -381,15 +364,7 @@ h1 {
     width: 100%;
 }
 
-/* custom-file-upload 样式 */
-.custom-file-upload {
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px #1484FF solid;
-    cursor: pointer;
-    color: #1484FF;
-    font-size: 16px;
-}
+
 
 /* 隐藏文件输入 */
 #file-upload {
@@ -403,15 +378,7 @@ h1 {
     padding: 0px 16px 0px 8px;
 }
 
-/* upload-options button 样式 */
-.upload-options button {
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px #007AFF solid;
-    cursor: pointer;
-    color: #ffffff;
-    font-size: 16px;
-}
+
 
 /* 响应式设计 */
 @media (min-width: 768px) {
@@ -453,16 +420,61 @@ h1 {
 }
 
 
-
+/* word.html 樣式*/
 .word-detail {
     max-width: 600px;
-    margin: 60px auto;
     padding: 24px;
     background: white;
     border: 0.4px solid #85D3FF;
     border-radius: 8px;
     font-family: Arial, sans-serif;
 }
+
+
+/* < 回上一頁*/
+.back {
+    width: 100%; /* 设置框的宽度 */
+    padding: 24px 0; /* 内边距，垂直方向 */
+    display: flex;
+    align-items: center; /* 左对齐 */
+    justify-content: flex-start; /* 左对齐 */
+}
+
+.back a {
+    text-decoration: none;
+    color: #007AFF;
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    text-align: left; /* 将文字左对齐 */
+}
+
+.back a:hover {
+    text-decoration: underline;
+}
+
+/* 对于大屏幕（桌面设备） */
+@media (min-width: 1024px) {
+    .back {
+        width: 560px; /* 在大屏幕上将宽度设置为600px */
+    }
+}
+
+/* 对于中等屏幕（平板设备） */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .back {
+        width: 64%; /* 在中等屏幕上将宽度设置为80% */
+    }
+}
+
+/* 对于小屏幕（手机设备） */
+@media (max-width: 767px) {
+    .back {
+        width: 80%; /* 在小屏幕上将宽度设置为100% */
+    }
+}
+
+
 
 /*難易度標籤樣式*/
 .difficulty-radio {
@@ -491,7 +503,7 @@ button:active {
     display: flex;
     justify-content: center; /* 将按钮居中 */
     background-color: white; /* 背景颜色 */
-    padding: 10px 0; /* 上下内边距 */
+    padding: 16px 0; /* 上下内边距 */
     box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); /* 添加阴影 */
     z-index: 1000; /* 确保导航栏在顶层 */
 }
@@ -513,29 +525,6 @@ button:active {
 
 
 
-
-/* < 回上一頁*/
-.back {
-    width: 600px; /* 设置框的宽度 */
-    padding: 24px 0; /* 内边距，垂直方向 */
-    margin: 0; /* 外边距 */
-    display: flex;
-    align-items: center; /* 左对齐 */
-    justify-content: center; /* 左对齐 */
-}
-
-.back a {
-    text-decoration: none;
-    color: #007AFF;
-    font-size: 16px;
-    font-family: Arial, sans-serif;
-    font-weight: bold;
-    text-align: left; /* 将文字左对齐 */
-}
-
-.back a:hover {
-    text-decoration: underline;
-}
 
 
 
@@ -559,6 +548,7 @@ body {
     overflow: hidden;
     border: 1px solid #ccc;
     margin-bottom: 20px; /* 在小屏幕上增加一些间距 */
+    flex: 2;
 }
 
 .image-preview {
@@ -572,35 +562,32 @@ body {
 
 /* 送出確認單字的整體版面 */
 .preview-section {
-    width: 70%;
     align-items: center;
     display: flex; /* 使用 Flexbox 布局 */
-
-    justify-content: center; /* 居中对齐 */
     padding: 20px;
-    box-sizing: border-box;
+    gap: 24px;
     flex-wrap: wrap; /* 允许子元素换行 */
 }
 
 
 /* 送出確認的單字清單 */
 .words-list {
-    width: calc(100% - 471px - 48px); /* 右侧宽度为总宽度减去左侧图片框框的宽度和间隔 */
+    flex: 1;
     
-    padding-left: 20px;
+    width: 400px;
     box-sizing: border-box;
     margin: 0 auto; /* 水平居中 */
+}
 
-    align-items: center; /* 水平居中 */
-    
+.center-button-container {
+    display: flex;
+    justify-content: center; /* 水平置中 */
+    align-items: center;    /* 垂直置中（如果父容器有高度） */
+    height: 64px;          /* 父容器高度，用於示例效果 */
 }
 
 
-
-
 .word-item {
-    width: 100%; /* 让单词项占满父容器的宽度 */
-    max-width: 600px; /* 最大宽度 */
     padding: 8px 24px;
     background: white;
     border-radius: 16px;
@@ -654,9 +641,7 @@ body {
         width: 100%;
         padding-left: 0;
     }
-    .word-item {
-        width: 100%; /* 在较小屏幕上全宽显示 */
-    }
+
 }
 
 @media (max-width: 768px) {
@@ -684,9 +669,7 @@ body {
         width: 8px;
         height: 8px;
     }
-    .word-item {
-        width: 100%; /* 在小屏幕上全宽显示 */
-    }
+
 }
 
 
@@ -769,7 +752,7 @@ body {
 
 .member-role {
     font-weight: bold;
-    padding-bottom: 8px;
+    padding: 8px 0 4px 0;
 }
 
 .member-name {
@@ -919,7 +902,9 @@ body {
     border: 1px solid #148ff1; /* 1像素寬的灰色邊框 */
     border-radius: 5px; /* 邊框圓角5像素 */
     padding: 10px; /* 內邊距10像素 */
-    margin: 0 5px; /* 左右邊距5像素 */
+    margin: 0 10px; /* 左右邊距5像素 */
+    align-content: center;
+    font-size: 14px;
 }
 
 
@@ -938,10 +923,41 @@ body {
     border-radius: 5px; /* 邊框圓角5像素 */
     padding: 10px; /* 內邊距10像素 */
     margin: 0 5px; /* 左右邊距5像素 */
+    font-size: 14px;
 }
 
 .filter-options-date label {
     text-align: center;
     padding: 4px; /* 內邊距10像素 */
     margin: 0 5px; /* 左右邊距5像素 */
+}
+
+
+
+/* Loading Spinner Styles */
+.loading-spinner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex ;
+    justify-content: center ;
+    align-items: center ;
+    z-index: 9999; /* Ensure it's on top of other content */
+}
+
+.spinner {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #32ade6;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }

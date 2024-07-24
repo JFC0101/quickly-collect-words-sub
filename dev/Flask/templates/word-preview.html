@@ -31,32 +31,64 @@
 
     <div class="container">
         <h1>單字預覽</h1>
-
         <div class="preview-section">
             <div class="image-preview-container">
-                <img class="image-preview" src="{{ url_for('static', filename='uploads/' + image_name) }}" alt="Uploaded Image">
+                <img class="image-preview" alt="Uploaded Image">
             </div>
             <div class="words-list">
                 <h2>可能的單字</h2>
-                <div id="word-container">
-                    {% for word in words %}
-                    <div class="word-item">
-                        <div class="word-text">{{ word }}</div>
-                        <div class="delete-button" onclick="deleteWord('{{ word }}')">
-                            <img src="{{ url_for('static', filename='img/X.svg') }}" alt="delete">
-                        </div>
-                    </div>
-                    {% endfor %}
+                <div id="word-container"></div>
+                <div class="center-button-container">
+                    <button class="button" onclick="sendWords()">確認</button>
                 </div>
-                <button class="button" onclick="sendWords()">確認</button>
             </div>
         </div>
     </div>
         
-        
+
+
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const image = urlParams.get('image');
+            const words = JSON.parse(urlParams.get('words'));
+
+            // 設置圖像
+            document.querySelector('.image-preview').src = `/static/uploads/${image}`;
+
+            // 渲染單詞列表
+            const wordContainer = document.getElementById('word-container');
+            words.forEach(word => {
+                const wordItem = document.createElement('div');
+                wordItem.className = 'word-item';
+
+                const wordText = document.createElement('div');
+                wordText.className = 'word-text';
+                wordText.textContent = word;
+
+                const deleteButton = document.createElement('div');
+                deleteButton.className = 'delete-button';
+                deleteButton.onclick = () => deleteWord(word);
+
+                const deleteIcon = document.createElement('img');
+                deleteIcon.src = '/static/img/X.svg';
+                deleteIcon.alt = 'delete';
+
+                deleteButton.appendChild(deleteIcon);
+                wordItem.appendChild(wordText);
+                wordItem.appendChild(deleteButton);
+                wordContainer.appendChild(wordItem);
+            });
+        });
+
+
+
         function sendWords() {
             const words = [];
+            
+            //使用 document.querySelectorAll('.word-text') 選取所有帶有 .word-text 類的元素。
+            //遍歷這些元素，將每個元素的文本內容（去除前後空格）加入到 words 數組中。
+            
             document.querySelectorAll('.word-text').forEach(element => {
                 words.push(element.textContent.trim());
             });
@@ -84,14 +116,14 @@
 
     <script>
         function deleteWord(word) {
-            // 获取所有单词项元素
+            // 使用 document.querySelectorAll('.word-item') 選取所有帶有 .word-item 類的元素。
             const wordItems = document.querySelectorAll('.word-item');
             
             wordItems.forEach(item => {
-                // 找到每个单词项的文本
+                // 遍歷這些單詞項，獲取每個單詞項中 .word-text 類的文本內容
                 const wordText = item.querySelector('.word-text').textContent;
                 
-                // 比较文本内容是否与要删除的单词匹配
+                // 如果文本內容與要刪除的單詞 word 匹配，則移除該單詞項。
                 if (wordText === word) {
                     // 移除匹配的单词项
                     item.remove();

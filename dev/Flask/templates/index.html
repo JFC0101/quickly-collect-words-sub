@@ -25,6 +25,7 @@
         </div>
     </nav>
 
+
     <!-- Loading Spinner -->
     <div id="loadingSpinner" class="loading-spinner" style="display: none;">
         <div class="spinner"></div>
@@ -152,13 +153,100 @@
             
             //更新单词列表：使用接收到的单词数据（包括标记为新的单词），调用 updateWordList 函数更新页面上的单词列表显示。
             .then(data => {
-                updateWordList(data.words, data.new_words);
+                updateWordList(data.words);
             })
             .catch(error => {
                 console.error('Error applying default filter:', error);
             });
         }
     </script>
+
+    <script>
+        //负责从前端页面获取用户设置的筛选条件，发送这些条件到服务器进行数据过滤，然后更新页面上的词汇列表。
+        function applyFilter() {
+            // 获取用户选择的日期
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            // 处理日期格式
+            const startDateTime = startDate + 'T00:00:00'; // 转换为 yyyy-mm-ddT00:00:00
+            const endDateTime = endDate + 'T23:59:59';   // 转换为 yyyy-mm-ddT23:59:59
+            
+            //选择所有被选中的复选框，然后 Array.from 将其转换为数组，map(el => el.value) 提取每个复选框的值
+            const difficulties = Array.from(document.querySelectorAll('input[name="difficulty"]:checked')).map(el => el.value);
+
+            // 发送 POST 请求
+            fetch('/filter', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    startDate: startDateTime,
+                    endDate: endDateTime,
+                    difficulties: difficulties
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 处理响应数据
+                updateWordList(data.words);
+                closeModal();
+            })
+            .catch(error => {
+                console.error('Error fetching filtered data:', error);
+            });
+        }        
+        
+        
+        //依據 filter 呈現符合篩選條件結果的單字
+        function updateWordList(words) {
+            const wordContainer = document.getElementById('wordContainer');
+            wordContainer.innerHTML = ''; //从干净的状态开始添加新的单词元素
+
+            //抓 URL 裡面的 new_words
+            const urlParams = new URLSearchParams(window.location.search);
+            const newWordsParam = urlParams.get('new_words');
+            const newWords = newWordsParam ? newWordsParam.split(',') : [];
+            
+
+            if (words.length === 0) {
+                wordContainer.innerHTML = '<p>No words found.</p>'; //words 数组长度。如果数组为空（即没有单词），则在容器中显示 "No words found."
+            } else {
+                words.forEach(word => {
+                    const isWordNew = newWords.includes(word.word);  // 检查该单词是否在新单词列表中
+                    const wordElement = document.createElement('div'); //遍历单词列表: 如果 words 数组中有单词，函数将遍历每个单词，并为每个单词创建一个 HTML 元素（div）。
+
+                    wordElement.className = 'word-card' + (isWordNew ? ' new-word' : ''); //这个元素被赋予类名 word-card，如果该单词也存在于 newWords 数组中，额外添加 new-word 类，这样就会应用绿色边框的样式。
+                    wordElement.innerHTML = `
+                        <a href="/word?word=${word.word}" class="word-link">
+                            <div class="word-header">
+                                <div>${word.word}</div>
+                                <div class="difficulty ${getDifficultyClass(word.difficulty)}">${getDifficultyText(word.difficulty)}</div>
+                            </div>
+                            <div class="word-details">
+                                <div>KK ${word.pronunciation}</div>
+                                <div>型態 ${word.type}</div>
+                            </div>
+                            <div class="word-meaning">解釋 ${word.definition}</div>
+                        </a>
+                    `;
+                    wordContainer.appendChild(wordElement);
+                });
+            }
+        }
+
+        //為了難易度顯示不同顏色的文字設計的
+        function getDifficultyClass(difficulty) {
+            return difficulty === 1 ? 'difficult' : (difficulty === 2 ? 'medium' : 'easy');
+        }
+        //資料庫是欄位值是 1.2.3 ，我設定 1 = 困難，為了難易度顯示中文，所以在這邊設計顯示的中文
+        function getDifficultyText(difficulty) {
+            return difficulty === 1 ? '困難' : (difficulty === 2 ? '中等' : '簡單');
+        }
+
+    </script>
+
 
     <script>
         // 搜尋欄位 (word-form) 輸入的內容，由前端自行先作判別，請用戶輸入正確的格式
@@ -236,6 +324,10 @@
 
         //如果用戶按了"新增單字"就請後端去 insert into db，再把資料呈現在前端
         function addWord(word) {
+
+            //載入 loading動畫
+            document.getElementById('loadingSpinner').style.display = 'flex';
+
             fetch('/add_word', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -245,6 +337,9 @@
 
             //處理 json 資料，新增完後要顯示新增的內容，並且要是綠框
             .then(data => {
+
+                document.getElementById('loadingSpinner').style.display = 'none';
+
                 if (data.success) {
                     showToast(data.success);
                     const wordDetails = data.word_details; // 从后端获取的单词详细信息
@@ -266,6 +361,7 @@
                 }
             })
             .catch(error => {
+                document.getElementById('loadingSpinner').style.display = 'none';  // 请求失败，也需要隐藏加载动画
                 console.error('Error adding word:', error);
                 showToast('網路請求失敗');
             });
@@ -273,85 +369,7 @@
     </script>
 
 
-    <script>
-        //负责从前端页面获取用户设置的筛选条件，发送这些条件到服务器进行数据过滤，然后更新页面上的词汇列表。
-        function applyFilter() {
-            // 获取用户选择的日期
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
 
-            // 处理日期格式
-            const startDateTime = startDate + 'T00:00:00'; // 转换为 yyyy-mm-ddT00:00:00
-            const endDateTime = endDate + 'T23:59:59';   // 转换为 yyyy-mm-ddT23:59:59
-            
-            //选择所有被选中的复选框，然后 Array.from 将其转换为数组，map(el => el.value) 提取每个复选框的值
-            const difficulties = Array.from(document.querySelectorAll('input[name="difficulty"]:checked')).map(el => el.value);
-    
-            // 发送 POST 请求
-            fetch('/filter', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    startDate: startDateTime,
-                    endDate: endDateTime,
-                    difficulties: difficulties
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // 处理响应数据
-                updateWordList(data.words);
-                closeModal();
-            })
-            .catch(error => {
-                console.error('Error fetching filtered data:', error);
-            });
-        }        
-        
-        
-        //依據 filter 呈現符合篩選條件結果的單字
-        function updateWordList(words, newWords = []) {
-            const wordContainer = document.getElementById('wordContainer');
-            wordContainer.innerHTML = ''; //从干净的状态开始添加新的单词元素
-
-            if (words.length === 0) {
-                wordContainer.innerHTML = '<p>No words found.</p>'; //words 数组长度。如果数组为空（即没有单词），则在容器中显示 "No words found."
-            } else {
-                words.forEach(word => {
-                    const isWordNew = newWords.includes(word.word);  // 检查该单词是否在新单词列表中
-                    const wordElement = document.createElement('div'); //遍历单词列表: 如果 words 数组中有单词，函数将遍历每个单词，并为每个单词创建一个 HTML 元素（div）。
-
-                    wordElement.className = 'word-card' + (isWordNew ? ' new-word' : ''); //这个元素被赋予类名 word-card，如果该单词也存在于 newWords 数组中，额外添加 new-word 类，这样就会应用绿色边框的样式。
-                    wordElement.innerHTML = `
-                        <a href="/word?word=${word.word}" class="word-link">
-                            <div class="word-header">
-                                <div>${word.word}</div>
-                                <div class="difficulty ${getDifficultyClass(word.difficulty)}">${getDifficultyText(word.difficulty)}</div>
-                            </div>
-                            <div class="word-details">
-                                <div>KK ${word.pronunciation}</div>
-                                <div>型態 ${word.type}</div>
-                            </div>
-                            <div class="word-meaning">解釋 ${word.definition}</div>
-                        </a>
-                    `;
-                    wordContainer.appendChild(wordElement);
-                });
-            }
-        }
-
-        //為了難易度顯示不同顏色的文字設計的
-        function getDifficultyClass(difficulty) {
-            return difficulty === 1 ? 'difficult' : (difficulty === 2 ? 'medium' : 'easy');
-        }
-        //資料庫是欄位值是 1.2.3 ，我設定 1 = 困難，為了難易度顯示中文，所以在這邊設計顯示的中文
-        function getDifficultyText(difficulty) {
-            return difficulty === 1 ? '困難' : (difficulty === 2 ? '中等' : '簡單');
-        }
-
-    </script>
 
 
     <script>

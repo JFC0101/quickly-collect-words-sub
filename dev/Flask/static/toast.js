@@ -1,3 +1,12 @@
+document.addEventListener("DOMContentLoaded", function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const toastMessage = urlParams.get('toast');
+
+    if (toastMessage) {
+        showToast(toastMessage);
+    }
+});
+
 function showToast(message) {
     const toast = document.createElement('div');
     toast.textContent = message;
