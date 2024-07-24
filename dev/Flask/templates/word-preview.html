@@ -61,10 +61,6 @@
                 words.push(element.textContent.trim());
             });
 
-            // Show loading spinner
-            document.getElementById('loadingSpinner').style.display = 'flex';
-
-
             fetch('/process_words', {
                 method: 'POST',
                 headers: {
@@ -76,22 +72,12 @@
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
-                return response.json();
-            })
-            .then(data => {
-                if (data.error) {
-                    alert('Error processing words: ' + data.error);
-                } else {
-                    console.log('Redirecting to index with new words:', data.new_words);
-                    const queryString = `/?new_words=${data.new_words.join(',')}&toast=${encodeURIComponent(data.toast || '')}`;
-                    window.location.replace(queryString);
-                }
+                // 如果后端重定向，前端可以直接跟随重定向或者在这里处理 URL 参数
+                window.location.href = response.url; // 这会跟随后端的重定向到首页
             })
             .catch(error => {
                 console.error('Error:', error);
             });
-
-            
         }
     </script>
 

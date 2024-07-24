@@ -31,7 +31,7 @@
     </div>
 
     <!-- Toast container -->
-    <div id="toast" class="toast"> text</div>
+    <div id="toastContainer"></div>
 
     <div class="container">
         <div class="header-container">
@@ -54,16 +54,16 @@
                     <div class="member-role">單字儲存日</div>
                     <div class="filter-options-date">
                         <label for="startDate">從:</label>
-                        <input type="date" id="startDate" name="startDate" value="{{ start_date }}">
+                        <input type="date" id="startDate" name="startDate">
                         <label for="endDate">至:</label>
-                        <input type="date" id="endDate" name="endDate" value="{{ end_date }}">
+                        <input type="date" id="endDate" name="endDate">
                     </div>
 
                     <div class="member-role">單字難易度</div>
                     <div class="filter-options">
-                        <label><input type="checkbox" name="difficulty" value="1" {% if 1 in difficulties %}checked{% endif %}> 困難 (不熟悉的)</label>
-                        <label><input type="checkbox" name="difficulty" value="2" {% if 2 in difficulties %}checked{% endif %}> 中等 (有印象的)</label>
-                        <label><input type="checkbox" name="difficulty" value="3" {% if 3 in difficulties %}checked{% endif %}> 簡單 (已記住單字)</label>
+                        <label><input type="checkbox" name="difficulty" value="1"> 困難 (不熟悉的)</label>
+                        <label><input type="checkbox" name="difficulty" value="2"> 中等 (有印象的)</label>
+                        <label><input type="checkbox" name="difficulty" value="3"> 簡單 (已記住單字)</label>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -73,7 +73,7 @@
             </div>
         </div>
 
-
+        
         <div class="search-bar">
             <form id="word-form" action="/" method="POST">
                 <input type="text" id="word" name="word" placeholder="輸入欲新增或查詢的單字">
@@ -82,63 +82,23 @@
             </form>
         </div>
         <div class="search-bar">
-            <div id="error-message" class="error-message">請輸入有效的英文字符或逗號。</div>
+            <div id="error-message" class="error-message"></div>
         </div>
-
+        
         <div class="word-list">
-            {% if word %}
-            <h2>查詢結果</h2>
-            <div class="word-card ">
-                <div class="word-header">
-                    <div>{{ word.word }}</div>                
-                </div>
-                <div class="word-details">
-                    
-                    <div>KK {{ word.pronunciation }}</div>
-                    <div>型態 {{ word.definition }}</div>
-                </div>
-                <div class="word-meaning">解釋 {{ word.example }}</div>
-                {% if not word_in_db %}
-                <div class="add-word" onclick="document.getElementById('add-word-form').submit();">新增單字</div>
-                <form id="add-word-form" action="/add_word" method="POST">
-                    <input type="hidden" name="word" value="{{ word.word }}">
-                </form>
-                {% endif %}
-            </div>
-
+            <div id="word_to_searchContainer"></div>
             <div class = "hori-line"></div>
-            {% endif %}
-
-            
-
-            <div id="wordContainer">
-                {% if words %}
-                <div>
-                    {% for word in words %}
-                        <a href="{{ url_for('word_detail', word=word[1]) }}" class="word-link">
-                            <div class="word-card {{ 'new-word' if word[1] in new_words else '' }}">
-                                <div class="word-header">
-                                    <div>{{ word[1] }}</div>
-                                    <div class="difficulty {{ 'difficult' if word[5] == 1 else ('medium' if word[5] == 2 else 'easy') }}">{{ '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單') }}</div>
-                                </div>
-                                <div class="word-details">
-                                    <div>KK {{ word[2] }}</div>
-                                    <div>型態 {{ word[3] }}</div>
-                                </div>
-                                <div class="word-meaning">解釋 {{ word[4] }}</div>
-                            </div>
-                        </a>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-    </div>
+        </div>
+        <div class="word-list">
+            <div id="wordContainer"></div>
+        </div>
+        
 
 
 
 
     <script>
-        // Filter popup functionality
+        // Filter popup functionality  打開或關上篩選選單
         function openModal() {
             document.getElementById("filterModal").style.display = "block";
         }
@@ -153,7 +113,167 @@
                 modal.style.display = "none";
             }
         }
-    
+    </script>
+
+
+    <script> 
+    //当页面加载时，首先通过 setDefaultFilters 函数设置默认筛选条件
+        function setDefaultFilters() {
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 60); //60天
+            document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+            document.getElementById('endDate').value = new Date().toISOString().split('T')[0];
+            document.querySelectorAll('input[name="difficulty"]').forEach(checkbox => checkbox.checked = true);
+        }
+        
+ 
+    //使用 fetch 发送 JSON 数据到后端，包括开始日期、结束日期和选中的难度级别。叫後端送回資料給我，再將資料用updateWordList function呈現出來
+        function applyDefaultFilter() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const startDateTime = startDate + 'T00:00:00';
+            const endDateTime = endDate + 'T23:59:59';
+            const difficulties = Array.from(document.querySelectorAll('input[name="difficulty"]:checked')).map(el => el.value);
+
+            fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    startDate: startDateTime,
+                    endDate: endDateTime,
+                    difficulties: difficulties
+                })
+            })
+            
+            //接收JSON响应：前端 fetch 调用的 .then() 方法接收到 JSON 数据
+            .then(response => response.json())
+            
+            //更新单词列表：使用接收到的单词数据（包括标记为新的单词），调用 updateWordList 函数更新页面上的单词列表显示。
+            .then(data => {
+                updateWordList(data.words, data.new_words);
+            })
+            .catch(error => {
+                console.error('Error applying default filter:', error);
+            });
+        }
+    </script>
+
+    <script>
+        // 搜尋欄位 (word-form) 輸入的內容，由前端自行先作判別，請用戶輸入正確的格式
+        document.addEventListener('DOMContentLoaded', function() {
+            const wordForm = document.getElementById('word-form');
+            const errorMessage = document.getElementById('error-message');
+            const regex = /^[A-Za-z,]+$/;
+
+            wordForm.addEventListener('submit', function(event) {
+                event.preventDefault(); // Always prevent default form submission
+                const wordInput = document.getElementById('word').value;
+
+                if (!regex.test(wordInput)) {
+                    errorMessage.style.display = 'block'; // Show error message
+                    errorMessage.textContent = '请输入有效的英文字符或逗号。'; // Optional: Provide more detailed feedback
+                } else {
+                    errorMessage.style.display = 'none'; // Hide error message
+                    searchWord(); // Call the function to handle data submission
+                }
+            });
+        });
+
+        //搜尋後請後端執行search()函數，如果後端說資料庫找得到，就呼叫 displayWordDetails function，把資料顯示在前端，如果找不到，就先說正在搜尋單字
+        function searchWord() {
+            const wordInput = document.getElementById('word').value;
+            fetch('/search', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({word: wordInput})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.word) {
+                    displayWordDetails(data);
+                } else {
+                    document.getElementById('word_to_searchContainer').innerHTML = "正在搜尋單字...";
+                    getWordDetails(wordInput); //前端呼叫前端的函數 getWordDetails()
+                }
+            })
+            .catch(error => {
+                console.error('Error searching word:', error);
+            });
+        }
+                
+        //搜尋後呈現單字
+        function displayWordDetails(data) {
+            const container = document.getElementById('word_to_searchContainer');
+            container.innerHTML = `
+                <h2>查詢結果</h2>
+                <div class="word-card">
+                    <div class="word-header">${data.word.word}</div>
+                    <div class="word-details">
+                        <div>KK: ${data.word.pronunciation}</div>
+                        <div>型態: ${data.word.definition}</div>
+                        <div>解釋: ${data.word.example}</div>
+                        <div>
+                            ${!data.word_in_db ? `<button onclick="addWord('${data.word.word}')">新增單字</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        //因為資料庫沒有，前端就再請後端問 gemini (/get_word_details) 拿到 json，送給 displayWordDetails(data) function 呈現
+        function getWordDetails(word) {
+            fetch(`/get_word_details?word=${word}`)
+            .then(response => response.json())
+            .then(data => {
+                displayWordDetails({word: data, word_in_db: false});
+            })
+            .catch(error => {
+                console.error('Error getting word details:', error);
+            });
+        }
+
+        //如果用戶按了"新增單字"就請後端去 insert into db，再把資料呈現在前端
+        function addWord(word) {
+            fetch('/add_word', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({word: word}) //将要添加的单词作为 JSON 数据发送
+            })
+            .then(response => response.json()) //如果后端成功处理添加单词的请求并返回成功的响应 json（通常包括单词的详细信息）
+
+            //處理 json 資料，新增完後要顯示新增的內容，並且要是綠框
+            .then(data => {
+                if (data.success) {
+                    showToast(data.success);
+                    const wordDetails = data.word_details; // 从后端获取的单词详细信息
+                    const container = document.getElementById('word_to_searchContainer');
+                    container.innerHTML = ''; // 清空现有内容
+                    const wordCard = document.createElement('div');
+                    wordCard.className = 'word-card new-word'; // 添加 'new-word' 类使邊框变绿
+                    wordCard.innerHTML = `
+                        <div class="word-header">${wordDetails.word}</div>
+                        <div class="word-details">
+                            <div>KK: ${wordDetails.pronunciation}</div>
+                            <div>型態: ${wordDetails.definition}</div>
+                        </div>
+                        <div class="word-meaning">解釋: ${wordDetails.example}</div>
+                    `;
+                    container.appendChild(wordCard);
+                } else {
+                    showToast(data.error || '添加單詞失敗，請重整再試一次');
+                }
+            })
+            .catch(error => {
+                console.error('Error adding word:', error);
+                showToast('網路請求失敗');
+            });
+        }
+    </script>
+
+
+    <script>
         //负责从前端页面获取用户设置的筛选条件，发送这些条件到服务器进行数据过滤，然后更新页面上的词汇列表。
         function applyFilter() {
             // 获取用户选择的日期
@@ -188,10 +308,54 @@
             .catch(error => {
                 console.error('Error fetching filtered data:', error);
             });
-        }
-            
+        }        
+        
+        
+        //依據 filter 呈現符合篩選條件結果的單字
+        function updateWordList(words, newWords = []) {
+            const wordContainer = document.getElementById('wordContainer');
+            wordContainer.innerHTML = ''; //从干净的状态开始添加新的单词元素
 
-    
+            if (words.length === 0) {
+                wordContainer.innerHTML = '<p>No words found.</p>'; //words 数组长度。如果数组为空（即没有单词），则在容器中显示 "No words found."
+            } else {
+                words.forEach(word => {
+                    const isWordNew = newWords.includes(word.word);  // 检查该单词是否在新单词列表中
+                    const wordElement = document.createElement('div'); //遍历单词列表: 如果 words 数组中有单词，函数将遍历每个单词，并为每个单词创建一个 HTML 元素（div）。
+
+                    wordElement.className = 'word-card' + (isWordNew ? ' new-word' : ''); //这个元素被赋予类名 word-card，如果该单词也存在于 newWords 数组中，额外添加 new-word 类，这样就会应用绿色边框的样式。
+                    wordElement.innerHTML = `
+                        <a href="/word?word=${word.word}" class="word-link">
+                            <div class="word-header">
+                                <div>${word.word}</div>
+                                <div class="difficulty ${getDifficultyClass(word.difficulty)}">${getDifficultyText(word.difficulty)}</div>
+                            </div>
+                            <div class="word-details">
+                                <div>KK ${word.pronunciation}</div>
+                                <div>型態 ${word.type}</div>
+                            </div>
+                            <div class="word-meaning">解釋 ${word.definition}</div>
+                        </a>
+                    `;
+                    wordContainer.appendChild(wordElement);
+                });
+            }
+        }
+
+        //為了難易度顯示不同顏色的文字設計的
+        function getDifficultyClass(difficulty) {
+            return difficulty === 1 ? 'difficult' : (difficulty === 2 ? 'medium' : 'easy');
+        }
+        //資料庫是欄位值是 1.2.3 ，我設定 1 = 困難，為了難易度顯示中文，所以在這邊設計顯示的中文
+        function getDifficultyText(difficulty) {
+            return difficulty === 1 ? '困難' : (difficulty === 2 ? '中等' : '簡單');
+        }
+
+    </script>
+
+
+    <script>
+        //可以在用戶的電腦暫存上一次篩選的結果
         function loadFilterSettings() {
             const startDate = document.getElementById('startDate');
             const endDate = document.getElementById('endDate');
@@ -210,59 +374,9 @@
                 checkbox.checked = difficulties.includes(parseInt(checkbox.value));
             });
         }
-    
-        // 初始化页面加载时的筛选设置
-        document.addEventListener('DOMContentLoaded', function() {
-            loadFilterSettings();
-        });
 
-        function updateWordList(words) {
-            const wordContainer = document.getElementById('wordContainer');
-            wordContainer.innerHTML = '';
-    
-            if (words.length === 0) {
-                wordContainer.innerHTML = '<p>No words found.</p>';
-            } else {
-                words.forEach(word => {
-                    const wordElement = document.createElement('div');
-                    wordElement.className = 'word-card';
-                    wordElement.innerHTML = `
-                        <a href="/word?word=${word.word}" class="word-link">
-                            <div class="word-header">
-                                <div>${word.word}</div>
-                                <div class="difficulty ${getDifficultyClass(word.difficulty)}">${getDifficultyText(word.difficulty)}</div>
-                            </div>
-                            <div class="word-details">
-                                <div>KK ${word.pronunciation}</div>
-                                <div>型態 ${word.type}</div>
-                            </div>
-                            <div class="word-meaning">解釋 ${word.definition}</div>
-                        </a>
-                    `;
-                    wordContainer.appendChild(wordElement);
-                });
-            }
-        }
-    
-        function getDifficultyClass(difficulty) {
-            switch (difficulty) {
-                case 1: return 'difficult';
-                case 2: return 'medium';
-                case 3: return 'easy';
-                default: return '';
-            }
-        }
-    
-        function getDifficultyText(difficulty) {
-            switch (difficulty) {
-                case 1: return '困難';
-                case 2: return '中等';
-                case 3: return '簡單';
-                default: return '';
-            }
-        }
-    
-        // Ensure at least one difficulty checkbox is selected
+        //----------------------------------------
+        // 篩選的時候，至少一個難易度被選定 Ensure at least one difficulty checkbox is selected
         document.querySelectorAll("input[name='difficulty']").forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 if (!document.querySelector("input[name='difficulty']:checked")) {
@@ -270,6 +384,14 @@
                 }
             });
         });
+
+        //----------------------------------------
+        //每次畫面載入，就要重新抓 Default 篩選的值
+        document.addEventListener('DOMContentLoaded', function() {
+            setDefaultFilters();
+            applyDefaultFilter();
+        });
+
     </script>
     
 
