@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload</title>
+    <style>
+        #image-container {
+            width: 800px;
+            height: 600px;
+            overflow: scroll;
+            position: relative;
+            border: 1px solid #ccc;
+        }
+        #image {
+            display: none;
+            transform-origin: top left;
+        }
+        #placeholder {
+            font-size: 20px;
+            color: #888;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload and Process Image</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Upload">
+    </form>
+    <div id="image-container">
+        <span id="placeholder">上傳檔案後顯示</span>
+        <img id="image" src="" alt="Processed Image">
+    </div>
+    <br>
+    <input type="range" id="zoom-range" min="0.5" max="2.5" step="0.1" value="1">
+    <label for="zoom-range">Zoom</label>
+
+    <script>
+        document.getElementById('zoom-range').addEventListener('input', function() {
+            const image = document.getElementById('image');
+            image.style.transform = `scale(${this.value})`;
+        });
+
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const imageUrl = urlParams.get('image_url');
+            if (imageUrl) {
+                const image = document.getElementById('image');
+                image.onload = function() {
+                    const containerWidth = 800;
+                    const containerHeight = 600;
+                    const imageWidth = image.naturalWidth;
+                    const imageHeight = image.naturalHeight;
+
+                    const widthRatio = containerWidth / imageWidth;
+                    const heightRatio = containerHeight / imageHeight;
+                    const bestRatio = Math.min(widthRatio, heightRatio);
+
+                    image.style.transform = `scale(${bestRatio})`;
+                    image.style.display = 'block';
+                    document.getElementById('placeholder').style.display = 'none';
+
+                    // Set the zoom slider to the calculated ratio
+                    document.getElementById('zoom-range').value = bestRatio;
+                };
+                image.src = imageUrl;
+            }
+        };
+    </script>
+</body>
+</html>
