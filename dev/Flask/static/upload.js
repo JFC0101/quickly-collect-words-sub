@@ -85,6 +85,10 @@ function uploadBlob(blob) {
 //將選取的圖片上傳，並且執行 upload 函數處理後續要顯示的單字
 function uploadFile() {
     const input = document.getElementById('file-upload');
+
+    //載入 loading動畫
+    document.getElementById('loadingSpinner').style.display = 'flex';
+
     if (input.files.length > 0) {
         const file = input.files[0];
         const formData = new FormData();
@@ -96,20 +100,33 @@ function uploadFile() {
         })
         .then(response => response.json())
         .then(data => {
-             // After successful upload, process uploaded file if needed
-             fetch('/upload', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                const image = encodeURIComponent(data.image);
-                const words = encodeURIComponent(JSON.stringify(data.words));
-                window.location.href = `/word-preview?image=${image}&words=${words}`;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+            if (data.success) {
+                // After successful upload, process uploaded file if needed
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const image = encodeURIComponent(data.image);
+                    const words = encodeURIComponent(JSON.stringify(data.words));
+                    window.location.href = `/word-preview?image=${image}&words=${words}`;
+                })
+                .catch(error => {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    console.error('Error:', error);
+                    
+                });
+            } else {
+                document.getElementById('loadingSpinner').style.display = 'none';
+                console.error('Error:', data.error);
+                
+            }
+        })
+        .catch(error => {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            console.error('Error:', error);
+            
         });
     } else {
         alert('請選擇檔案');

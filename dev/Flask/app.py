@@ -252,17 +252,8 @@ def process_words():
 
 
 #------------------------#
-#這個沒用到 當upload.html點擊"擷取上傳"就會把圖片存起來，命名為capture.jpg
-'''@app.route('/upload_capture', methods=['POST'])
-def upload_capture():
-    # 保存捕获的 JPEG 图片
-    file = request.files.get('file')
-    if file:
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], 'capture.jpg'))
-        return jsonify({'success': True})
-    return jsonify({'error': 'No file uploaded'})
-    '''
-
+from main import process_image  # 假设main.py中包含process_image函数
+from werkzeug.utils import secure_filename
 
 #处理文件上传请求，保存上传的文件到指定的文件夹中
 @app.route('/upload_file', methods=['POST'])
@@ -273,8 +264,15 @@ def upload_file():
     if file.filename == '':
         return jsonify({'error': 'No selected file'})
     if file:
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
-        return jsonify({'success': 'File uploaded successfully', 'filename': file.filename})
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(file_path)
+
+        return jsonify({
+            'success': 'File uploaded and processed successfully',
+            'filename': filename,
+        })
+
     return jsonify({'error': 'File upload failed'})
 
 
@@ -287,13 +285,20 @@ def upload():
         uploaded_file = request.files.get('file')
 
         if uploaded_file:
-            # Process uploaded file if needed
-            # Example: recognizing words from the image
-            words = ['success','failure','nice','explore']
-            image_name = uploaded_file.filename
+            # 保存文件到指定目录
+            filename = secure_filename(uploaded_file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            uploaded_file.save(filepath)
 
-            # Redirect to word preview page with image and words data
-            return jsonify({'image': image_name, 'words': words})  #upload.js 接收了 json 內容就會將畫面導到 word-preview 頁面
+            # 调用process_image函数处理上传的图片
+            detected_words = process_image(filepath)
+            processed_image_path = 'detect-ocr.jpg'
+
+            # 返回处理后的图片和单词列表
+            return jsonify({
+                'image': processed_image_path,
+                'words': detected_words
+            })#upload.js 接收了 json 內容就會將畫面導到 word-preview 頁面
 
     #如果不是 post 就是單純的打開 upload 畫面
     return render_template('upload.html')

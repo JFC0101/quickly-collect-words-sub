@@ -544,8 +544,8 @@ body {
 
 /* 上傳的圖片預覽的圖片大小 */
 .image-preview-container {
-    width: 471px;
-    height: 354px;
+    max-width: 471px;
+    max-height: 600px;
     overflow: hidden;
     border: 1px solid #ccc;
     margin-bottom: 20px; /* 在小屏幕上增加一些间距 */
@@ -574,10 +574,12 @@ body {
 /* 送出確認的單字清單 */
 .words-list {
     flex: 1;
-    
-    width: 400px;
+    overflow-y: auto; /* 垂直滾動條 */
+    width: 480px;
+    height: 600px;  /* 固定高度 */
     box-sizing: border-box;
     margin: 0 auto; /* 水平居中 */
+    padding: 0 36px;
 }
 
 .center-button-container {
