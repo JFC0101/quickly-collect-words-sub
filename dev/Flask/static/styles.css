@@ -163,7 +163,7 @@ h2 {
 
 
 .word-list {
-    max-width: 1110px;
+    max-width: 1116px;
     display: inline-flex;
     flex-direction: column;
     justify-content: center; /* This centers the content inside the team-list if there's any */
@@ -248,9 +248,9 @@ h2 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 32px; /* 调整间距 */
-    margin-top: 48px; /* 减少顶部间距 */
-    padding: 0 15px; /* 添加水平内边距以适应小屏幕 */
+    gap: 24px; /* 调整间距 */
+    justify-content: center;
+    flex: 1;
 }
 
 /* .main-content 的样式 */
@@ -259,6 +259,7 @@ h2 {
     flex-direction: column; /* 在小屏幕上垂直排列 */
     gap: 20px;
     width: 100%; /* 确保内容占满父容器的宽度 */
+    margin-top: 40px; /* 减少顶部间距 */
 }
 
 /* .webcam-section 的样式 */

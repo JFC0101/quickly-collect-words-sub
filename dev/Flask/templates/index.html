@@ -301,10 +301,10 @@
                     <div class="word-details">
                         <div>KK: ${data.word.pronunciation}</div>
                         <div>型態: ${data.word.definition}</div>
-                        <div>解釋: ${data.word.example}</div>
-                        <div>
-                            ${!data.word_in_db ? `<button onclick="addWord('${data.word.word}')">新增單字</button>` : ''}
-                        </div>
+                    </div>
+                        <div class="word-meaning">解釋: ${data.word.example}</div>
+                    <div>
+                        ${!data.word_in_db ? `<button class="button" onclick="addWord('${data.word.word}')">新增單字</button>` : ''}
                     </div>
                 </div>
             `;
