@@ -276,7 +276,7 @@ def upload_file():
     return jsonify({'error': 'File upload failed'})
 
 
-#將處理過的圖片，傳到前端，前端會把內容傳到 URL
+#將處理過的圖片， json 保存 image 路徑、detected_words, ocr_boxes 傳給前端，並將 json 存到 session 中給 word-preview.html 使用
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST':
@@ -305,17 +305,10 @@ def upload():
 
 
 
-#呈現圖片的單字、處理過的圖片 (應該要標註哪些地方有抓到了)
+#進入 word-preview.html
 @app.route('/word-preview')
 def word_preview():
     return render_template('word-preview.html')
-'''
-    #根據從 URL 參數獲取的圖像名稱和單詞列表
-    image_name = request.args.get('image')
-    words = request.args.get('words').split(',')
-    return render_template('word-preview.html', image_name=image_name, words=words)
-'''
-
 
 #------------------------#
 # 在 word.html 裡面點擊難易度 label 呼叫後端進行 update_difficulty() function 運行，更新難易度

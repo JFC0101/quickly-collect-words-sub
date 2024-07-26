@@ -261,7 +261,7 @@
 
                 if (!regex.test(wordInput)) {
                     errorMessage.style.display = 'block'; // Show error message
-                    errorMessage.textContent = '请输入有效的英文字符或逗号。'; // Optional: Provide more detailed feedback
+                    errorMessage.textContent = '僅可輸入英文。'; // Optional: Provide more detailed feedback
                 } else {
                     errorMessage.style.display = 'none'; // Hide error message
                     searchWord(); // Call the function to handle data submission

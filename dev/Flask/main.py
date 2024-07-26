@@ -8,7 +8,7 @@ from google.cloud import vision
 from google.cloud.vision_v1 import types
 from detect_color import detect_color_regions
 
-
+#計算重疊範圍的公式
 def calculate_overlap_1(box1, box2):
     x1_min, y1_min, x1_max, y1_max = box1
     x2_min, y2_min, x2_max, y2_max = box2
@@ -28,6 +28,7 @@ def calculate_overlap_1(box1, box2):
 
     return max(overlap_ratio1, overlap_ratio2), overlap_area / min(area1, area2)
 
+#把所有 ocr 抓到的 box 跟單字存到 ocr_boxes list裡，把這個餵給 html settion 裡，滑鼠點擊就會在前端判斷是否有對應到 ocr box
 def detect_text(path):
     """Detects text in the file."""
     client = vision.ImageAnnotatorClient()
@@ -58,6 +59,7 @@ def detect_text(path):
             'https://cloud.google.com/apis/design/errors'.format(response.error.message))
     
     return ocr_boxes
+
 
 #增加图像对比度并保存处理后的图像
     """
@@ -95,11 +97,10 @@ def increase_contrast(image_path, output_path, alpha=0.8, beta=0, saturation_sca
 
     return output_path
 
-
+#把圖片抓出來、進行 ocr 檢測、進行 detect_color 區塊抓出來、倆個函數進行比對，有重疊超過 40% 就抓出單字，把圖片處理後儲存起來
 def process_image(image_path):
-    # 讀取圖片
 
-    
+    # 讀取圖片    
     image_cv = cv2.imread(image_path)
     if image_cv is None:
         print("Error: Image not found or unable to load.")
