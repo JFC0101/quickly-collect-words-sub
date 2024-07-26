@@ -70,13 +70,14 @@ function uploadBlob(blob) {
         })
         .then(response => response.json())
         .then(data => {
-            const image = encodeURIComponent(data.image);
-            const words = encodeURIComponent(JSON.stringify(data.words));
-
-            //最後將收到的圖像名稱和單詞列表作為 URL 參數，重定向到 word-preview 頁面。
-            window.location.href = `/word-preview?image=${image}&words=${words}`;
+            // 将数据存储在 sessionStorage
+            sessionStorage.setItem('processedImage', data.image);
+            sessionStorage.setItem('detectedWords', JSON.stringify(data.words));
+            sessionStorage.setItem('ocrBoxes', JSON.stringify(data.ocr_boxes));
+            window.location.href = `/word-preview`;
         })
         .catch(error => {
+            document.getElementById('loadingSpinner').style.display = 'none';
             console.error('Error:', error);
         });
     });
@@ -108,27 +109,27 @@ function uploadFile() {
                 })
                 .then(response => response.json())
                 .then(data => {
-                    const image = encodeURIComponent(data.image);
-                    const words = encodeURIComponent(JSON.stringify(data.words));
-                    window.location.href = `/word-preview?image=${image}&words=${words}`;
+                    // 将数据存储在 sessionStorage
+                    sessionStorage.setItem('processedImage', data.image);
+                    sessionStorage.setItem('detectedWords', JSON.stringify(data.words));
+                    sessionStorage.setItem('ocrBoxes', JSON.stringify(data.ocr_boxes));
+                    window.location.href = `/word-preview`;
                 })
                 .catch(error => {
                     document.getElementById('loadingSpinner').style.display = 'none';
                     console.error('Error:', error);
-                    
                 });
             } else {
                 document.getElementById('loadingSpinner').style.display = 'none';
                 console.error('Error:', data.error);
-                
             }
         })
         .catch(error => {
             document.getElementById('loadingSpinner').style.display = 'none';
             console.error('Error:', error);
-            
         });
     } else {
+        document.getElementById('loadingSpinner').style.display = 'none';
         alert('請選擇檔案');
     }
 }

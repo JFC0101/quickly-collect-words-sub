@@ -276,8 +276,7 @@ def upload_file():
     return jsonify({'error': 'File upload failed'})
 
 
-#將處理過的圖片，傳到前端呈現、並顯示單字，目前暫用 words list 寫死有哪些單字
-#[尚未處理] 不知道如何串接 Jeff 的東西
+#將處理過的圖片，傳到前端，前端會把內容傳到 URL
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST':
@@ -291,13 +290,14 @@ def upload():
             uploaded_file.save(filepath)
 
             # 调用process_image函数处理上传的图片
-            detected_words = process_image(filepath)
+            detected_words, ocr_boxes = process_image(filepath)
             processed_image_path = 'detect-ocr.jpg'
 
             # 返回处理后的图片和单词列表
             return jsonify({
                 'image': processed_image_path,
-                'words': detected_words
+                'words': detected_words,
+                'ocr_boxes': ocr_boxes
             })#upload.js 接收了 json 內容就會將畫面導到 word-preview 頁面
 
     #如果不是 post 就是單純的打開 upload 畫面
@@ -306,14 +306,15 @@ def upload():
 
 
 #呈現圖片的單字、處理過的圖片 (應該要標註哪些地方有抓到了)
-#[尚未完成] 實際上圖片應該是 Jeff 處理完的圖片放到 word-preview 畫面中，但目前是抓上傳的圖片
 @app.route('/word-preview')
 def word_preview():
+    return render_template('word-preview.html')
+'''
     #根據從 URL 參數獲取的圖像名稱和單詞列表
     image_name = request.args.get('image')
     words = request.args.get('words').split(',')
     return render_template('word-preview.html', image_name=image_name, words=words)
-
+'''
 
 
 #------------------------#

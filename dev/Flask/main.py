@@ -59,15 +59,56 @@ def detect_text(path):
     
     return ocr_boxes
 
+#增加图像对比度并保存处理后的图像
+    """
+    参数:
+    - image_path: 输入图像的路径
+    - output_path: 输出处理后图像的路径
+    - alpha: 对比度控制 (0-3.0) 越大對比越強
+    - beta: 亮度控制 (0-100) 越大越亮
+    - saturation_scale: 彩度控制 (1.0-3.0) 彩度参数通常不会引起过曝问题
+    - sharpening_factor: 锐利度控制 (1.0-3.0)
+    """
+def increase_contrast(image_path, output_path, alpha=0.8, beta=0, saturation_scale=1.5, sharpening_factor=1.1):
+
+    image = cv2.imread(image_path)
+    if image is None:
+        print("Error: Image not found or unable to load.")
+        return
+
+    # 调整对比度和亮度
+    adjusted = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
+
+    # 调整彩度
+    hsv = cv2.cvtColor(adjusted, cv2.COLOR_BGR2HSV)
+    hsv[...,1] = cv2.multiply(hsv[...,1], saturation_scale)
+    saturated = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+
+    # 调整锐利度
+    kernel = np.array([[0, -1, 0], [-1, 5 + sharpening_factor, -1], [0, -1, 0]])
+    sharpened = cv2.filter2D(saturated, -1, kernel)
+
+    # 保存处理后的图像
+    cv2.imwrite(output_path, sharpened)
+    print(f"Image saved to {output_path}")
+
+
+    return output_path
+
+
 def process_image(image_path):
     # 讀取圖片
+
+    
     image_cv = cv2.imread(image_path)
     if image_cv is None:
         print("Error: Image not found or unable to load.")
         return []
+    
+    contrast_image_path = increase_contrast(image_path, 'static/uploads/for_ocr.jpg')
 
     # 進行文字檢測
-    ocr_boxes = detect_text(image_path)
+    ocr_boxes = detect_text(contrast_image_path)
 
     # 指定的合併區域
     merged_regions_all = detect_color_regions(image_path)
@@ -107,7 +148,7 @@ def process_image(image_path):
 
     print(f"Processed image saved to {output_path}")
 
-    return detected_words
+    return detected_words, ocr_boxes
 
 '''
 # 調用函數處理圖片並獲取單字列表

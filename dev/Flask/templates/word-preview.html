@@ -33,7 +33,7 @@
         <h1>單字預覽</h1>
         <div class="preview-section">
             <div class="image-preview-container">
-                <img class="image-preview" alt="Uploaded Image">
+                <img id="processed-image" class="image-preview" alt="Uploaded Image">
             </div>
             <div class="words-list">
                 <h2>可能的單字</h2>
@@ -47,16 +47,25 @@
         
 
 
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const image = urlParams.get('image');
-            const words = JSON.parse(urlParams.get('words'));
+            // 从 sessionStorage 获取数据
+            const image = sessionStorage.getItem('processedImage');
+            const words = JSON.parse(sessionStorage.getItem('detectedWords'));
+            const ocrBoxes = JSON.parse(sessionStorage.getItem('ocrBoxes'));
 
-            // 設置圖像
-            document.querySelector('.image-preview').src = `/static/uploads/${image}`;
+            // 确保图片元素存在
+            const imgElement = document.getElementById('processed-image');
+            if (!imgElement) {
+                console.error('Image element not found');
+                return;
+            }
 
-            // 渲染單詞列表
+            // 设置图像
+            imgElement.src = `/static/uploads/${image}`;
+
+            // 渲染单词列表
             const wordContainer = document.getElementById('word-container');
             words.forEach(word => {
                 const wordItem = document.createElement('div');
@@ -79,10 +88,68 @@
                 wordItem.appendChild(deleteButton);
                 wordContainer.appendChild(wordItem);
             });
+
+            // 确保图片加载完成后获取其尺寸
+            imgElement.onload = function() {
+                const originalWidth = imgElement.naturalWidth;
+                const originalHeight = imgElement.naturalHeight;
+
+                imgElement.addEventListener('click', function(event) {
+                    const rect = imgElement.getBoundingClientRect();
+                    const x = event.clientX - rect.left;
+                    const y = event.clientY - rect.top;
+
+                    // 计算点击位置在原始图片中的坐标
+                    const scaleX = originalWidth / rect.width;
+                    const scaleY = originalHeight / rect.height;
+                    const originalX = x * scaleX;
+                    const originalY = y * scaleY;
+
+                    const clickedWord = getClickedWord(originalX, originalY, ocrBoxes);
+                    if (clickedWord) {
+                        const wordElement = document.createElement('div');
+                        wordElement.className = 'word-item';
+
+                        const wordText = document.createElement('div');
+                        wordText.className = 'word-text';
+                        wordText.textContent = clickedWord;
+
+                        const deleteButton = document.createElement('div');
+                        deleteButton.className = 'delete-button';
+                        deleteButton.onclick = () => deleteWord(clickedWord);
+
+                        const deleteIcon = document.createElement('img');
+                        deleteIcon.src = '/static/img/X.svg';
+                        deleteIcon.alt = 'delete';
+
+                        deleteButton.appendChild(deleteIcon);
+                        wordElement.appendChild(wordText);
+                        wordElement.appendChild(deleteButton);
+                        wordContainer.appendChild(wordElement);
+                    }
+                });
+            };
         });
 
+        function getClickedWord(x, y, ocrBoxes) {
+            for (let region of ocrBoxes) {
+                const [x_min, y_min, x_max, y_max, text] = region;
+                if (x >= x_min && x <= x_max && y >= y_min && y <= y_max) {
+                    return text;
+                }
+            }
+            return null;
+        }
+
+    </script>
 
 
+
+
+
+
+
+    <script>
         function sendWords() {
 
             //載入 loading動畫
