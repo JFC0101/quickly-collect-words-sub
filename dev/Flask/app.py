@@ -251,8 +251,8 @@ def process_words():
 
 
 #------------------------#
-from main import process_uploaded_image  #Monday自己測試的版本
-#from image_processor import process_uploaded_image
+#from main import process_uploaded_image  #Monday自己測試的版本
+from image_processor import process_uploaded_image
 from werkzeug.utils import secure_filename
 
 #处理文件上传请求，保存上传的文件到指定的文件夹中
