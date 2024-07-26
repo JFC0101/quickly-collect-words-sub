@@ -98,7 +98,7 @@ def increase_contrast(image_path, output_path, alpha=0.8, beta=0, saturation_sca
     return output_path
 
 #把圖片抓出來、進行 ocr 檢測、進行 detect_color 區塊抓出來、倆個函數進行比對，有重疊超過 40% 就抓出單字，把圖片處理後儲存起來
-def process_image(image_path):
+def process_uploaded_image(image_path):
 
     # 讀取圖片    
     image_cv = cv2.imread(image_path)
@@ -122,7 +122,7 @@ def process_image(image_path):
     result_image = overlay.copy()
     mask = np.zeros_like(image_cv, dtype=np.uint8)
 
-    detected_words = []
+    selected_texts = []
 
     # 檢查合併後的框框和 OCR 框框是否重疊，並抓取單字
     for merged_region in merged_regions_all:
@@ -131,9 +131,9 @@ def process_image(image_path):
             x_min, y_min, x_max, y_max, text = ocr_box
             _, min_overlap_ratio = calculate_overlap_1((x, y, x2, y2), (x_min, y_min, x_max, y_max))
             if min_overlap_ratio >= 0.4:
-                print(f"Detected word: {text} in region: ({x_min}, {y_min}, {x_max}, {y_max})")
-                if text not in detected_words:  # 仅在单词未被检测到时添加
-                    detected_words.append(text)
+                print(f"Selected word: {text} in region: ({x_min}, {y_min}, {x_max}, {y_max})")
+                if text not in selected_texts:  # 仅在单词未被检测到时添加
+                    selected_texts.append(text)
                     # 在原圖上繪製綠色邊界框
                     cv2.rectangle(result_image, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
                     cv2.putText(result_image, text, (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
@@ -144,16 +144,16 @@ def process_image(image_path):
     result_image = cv2.bitwise_and(image_cv, mask) + cv2.bitwise_and(overlay, cv2.bitwise_not(mask))
 
     # 儲存處理後的圖片
-    output_path = 'static/uploads/detect-ocr.jpg'
+    output_path = 'static/uploads/processed_image.jpg'
     cv2.imwrite(output_path, result_image)
 
     print(f"Processed image saved to {output_path}")
 
-    return detected_words, ocr_boxes
+    return selected_texts, ocr_boxes
 
 '''
 # 調用函數處理圖片並獲取單字列表
 image_path = 'static/uploads/test10.jpg'
-detected_words = process_image(image_path)
-print("Word list:", detected_words)
+selected_texts = process_uploaded_image(image_path)
+print("Word list:", selected_texts)
 '''

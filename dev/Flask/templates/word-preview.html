@@ -31,6 +31,10 @@
 
     <div class="container">
         <h1>單字預覽</h1>
+        <div class="center-text-container"> 
+            <div class="highlight-text">可以點擊圖片新增單字唷！</div>
+        </div>
+
         <div class="preview-section">
             <div class="image-preview-container">
                 <img id="processed-image" class="image-preview" alt="Uploaded Image">
@@ -52,7 +56,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // 从 sessionStorage 获取数据
             const image = sessionStorage.getItem('processedImage');
-            const words = JSON.parse(sessionStorage.getItem('detectedWords'));
+            const words = JSON.parse(sessionStorage.getItem('selectedWords'));
             const ocrBoxes = JSON.parse(sessionStorage.getItem('ocrBoxes'));
 
             // 确保图片元素存在
@@ -89,7 +93,7 @@
                 wordContainer.appendChild(wordItem);
             });
 
-            // 确保图片加载完成后获取其尺寸
+            // 确保图片加载完成后获取其尺寸，這個調整可以讓滑鼠點的位子，對應到圖片的座標，即使圖片縮放過也可以順利抓到相應滑鼠座標
             imgElement.onload = function() {
                 const originalWidth = imgElement.naturalWidth;
                 const originalHeight = imgElement.naturalHeight;
@@ -130,7 +134,7 @@
                 });
             };
         });
-
+        //把滑鼠點的座標進行比對，比對到的話就把單字(text)抓出來
         function getClickedWord(x, y, ocrBoxes) {
             for (let region of ocrBoxes) {
                 const [x_min, y_min, x_max, y_max, text] = region;
@@ -150,6 +154,7 @@
 
 
     <script>
+        //把要儲存的單字送給後端，後端查找完資料庫或是 gemini api 時，完成就回應給前端，前端會把 words 用 josn 傳到首頁，讓首頁知道哪些單字是新增的
         function sendWords() {
 
             //載入 loading動畫

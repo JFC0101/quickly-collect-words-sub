@@ -72,7 +72,7 @@ function uploadBlob(blob) {
         .then(data => {
             // 将数据存储在 sessionStorage
             sessionStorage.setItem('processedImage', data.image);
-            sessionStorage.setItem('detectedWords', JSON.stringify(data.words));
+            sessionStorage.setItem('selectedWords', JSON.stringify(data.words));
             sessionStorage.setItem('ocrBoxes', JSON.stringify(data.ocr_boxes));
             window.location.href = `/word-preview`;
         })
@@ -87,7 +87,7 @@ function uploadBlob(blob) {
 function uploadFile() {
     const input = document.getElementById('file-upload');
 
-    //載入 loading動畫
+    //載入 loading 動畫
     document.getElementById('loadingSpinner').style.display = 'flex';
 
     if (input.files.length > 0) {
@@ -111,7 +111,7 @@ function uploadFile() {
                 .then(data => {
                     // 将数据存储在 sessionStorage
                     sessionStorage.setItem('processedImage', data.image);
-                    sessionStorage.setItem('detectedWords', JSON.stringify(data.words));
+                    sessionStorage.setItem('selectedWords', JSON.stringify(data.words));
                     sessionStorage.setItem('ocrBoxes', JSON.stringify(data.ocr_boxes));
                     window.location.href = `/word-preview`;
                 })

@@ -75,7 +75,7 @@ def get_word_details(word):
 def fetch_filtered_words(start_date, end_date, difficulties):
     conn = sqlite3.connect('word.db')
     cursor = conn.cursor()
-    query = "SELECT * FROM word WHERE created_at BETWEEN ? AND ? AND difficulty IN ({seq})".format(
+    query = "SELECT * FROM word WHERE created_at BETWEEN ? AND ? AND difficulty IN ({seq}) ORDER BY id DESC".format(
         seq=','.join(['?']*len(difficulties))
     )
     cursor.execute(query, (start_date, end_date, *difficulties))
@@ -170,9 +170,9 @@ def search():
         return jsonify({'word': {
             'word': word_details[1],
             'pronunciation': word_details[2],
-            'definition': word_details[4],
-            'example': word_details[5],
-            'difficulty': word_details[6]
+            'definition': word_details[3],
+            'example': word_details[4],
+            'difficulty': word_details[5]
         }, 'word_in_db': True})
     else:
         return jsonify({'word': None})
@@ -216,7 +216,6 @@ def add_word():
 #------------------------#
     
 # 上傳圖片或是照相得到的新的單字，在 word-preview.html 頁面按送出執行會呼叫這個路由進行 process_words() function 來 Add a new word to the database
-# [尚未完成] 待修正一次可以傳一堆單字處理，資料庫有的就忽略，且處理完回到首頁，要把新增的單字顯示綠色框
 @app.route('/process_words', methods=['POST'])
 def process_words():
     words = request.json.get('words', [])
@@ -252,7 +251,8 @@ def process_words():
 
 
 #------------------------#
-from main import process_image  # 假设main.py中包含process_image函数
+from main import process_uploaded_image  #Monday自己測試的版本
+#from image_processor import process_uploaded_image
 from werkzeug.utils import secure_filename
 
 #处理文件上传请求，保存上传的文件到指定的文件夹中
@@ -276,7 +276,7 @@ def upload_file():
     return jsonify({'error': 'File upload failed'})
 
 
-#將處理過的圖片， json 保存 image 路徑、detected_words, ocr_boxes 傳給前端，並將 json 存到 session 中給 word-preview.html 使用
+#將處理過的圖片， json 保存 image 路徑、selected_texts, ocr_boxes 傳給前端，並將 json 存到 session 中給 word-preview.html 使用
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if request.method == 'POST':
@@ -289,14 +289,14 @@ def upload():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             uploaded_file.save(filepath)
 
-            # 调用process_image函数处理上传的图片
-            detected_words, ocr_boxes = process_image(filepath)
-            processed_image_path = 'detect-ocr.jpg'
+            # 调用process_uploaded_image函数处理上传的图片
+            selected_texts, ocr_boxes = process_uploaded_image(filepath)
+            processed_image_path = 'processed_image.jpg'
 
             # 返回处理后的图片和单词列表
             return jsonify({
                 'image': processed_image_path,
-                'words': detected_words,
+                'words': selected_texts,
                 'ocr_boxes': ocr_boxes
             })#upload.js 接收了 json 內容就會將畫面導到 word-preview 頁面
 
