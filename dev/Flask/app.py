@@ -290,7 +290,11 @@ def upload():
             uploaded_file.save(filepath)
 
             # 调用process_uploaded_image函数处理上传的图片
-            selected_texts, ocr_boxes = process_uploaded_image(filepath)
+
+#修正return項目
+#            selected_texts, ocr_boxes = process_uploaded_image(filepath)
+            image, selected_texts, ocr_boxes = process_uploaded_image(filepath)
+
             processed_image_path = 'processed_image.jpg'
 
             # 返回处理后的图片和单词列表
@@ -359,4 +363,4 @@ def about():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

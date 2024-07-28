@@ -13,14 +13,16 @@ from PIL import ExifTags
 import re
 
 #接收上傳的文件，處理圖像，保存處理後的圖像，並返回文件路徑
+"""
 def process_uploaded_image(file):
     processed_image, selected_texts, ocr_boxes = process_image(file)
-    #file_path = save_processed_image(processed_image)
+    save_processed_image(processed_image)
     #print("Selected texts:", selected_texts)
     return selected_texts, ocr_boxes
+"""
 
-
-def process_image(file):
+#合併process_uploaded_image與process_image，保留process_uploaded_image名稱和process_image的內容
+def process_uploaded_image(file):
     #打開圖像文件，調整方向，並將其轉換為OpenCV可以處理的格式
     image = Image.open(file)
     image = correct_image_orientation(image)
@@ -52,7 +54,11 @@ def process_image(file):
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
         selected_texts.extend(process_text_in_box(ocr_results, box, image))
 
-    selected_texts = process_selected_texts(selected_texts)        
+    selected_texts = process_selected_texts(selected_texts)
+
+#新增修正    
+    save_processed_image(image)        
+
     return image, selected_texts, ocr_boxes
 
 
