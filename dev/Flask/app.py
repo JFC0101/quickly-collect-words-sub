@@ -73,7 +73,7 @@ def get_word_details(word):
 #這個 fetch_filtered_words() function 是去資料庫查找符合篩選條件資格的單字，所以 index() 或 filter() function 都有呼叫這個函數
 #原本是預計使用 fetch_all-words()，但因為做了篩選功能，所以每次抓資料庫單字時，都是依據篩選結果(start_date, end_date, difficulties)去查找單字
 def fetch_filtered_words(start_date, end_date, difficulties):
-    conn = sqlite3.connect('word.db')
+    conn = sqlite3.connect('app_words.db')
     cursor = conn.cursor()
     query = "SELECT * FROM word WHERE created_at BETWEEN ? AND ? AND difficulty IN ({seq}) ORDER BY id DESC".format(
         seq=','.join(['?']*len(difficulties))
@@ -161,7 +161,7 @@ def filter_words():
 def search():
     data = request.get_json()
     word_to_search = data['word']
-    conn = sqlite3.connect('word.db')
+    conn = sqlite3.connect('app_words.db')
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM word WHERE word=?", (word_to_search,))
     word_details = cursor.fetchone()
@@ -197,7 +197,7 @@ def add_word():
     word = data['word']
     word_details = get_word_details(word)  # Assume this function fetches word details correctly
     if word_details:
-        conn = sqlite3.connect('word.db')
+        conn = sqlite3.connect('app_words.db')
         cursor = conn.cursor()
         try:
             cursor.execute("INSERT INTO word (word, pronunciation, definition, example, difficulty) VALUES (?, ?, ?, ?, ?)",
@@ -222,7 +222,7 @@ def process_words():
     processed_words = []
 
     try:
-        conn = sqlite3.connect('word.db')
+        conn = sqlite3.connect('app_words.db')
         cursor = conn.cursor()
 
         for word_to_search in words:
@@ -322,7 +322,7 @@ def update_difficulty():
     word = data.get('word')
     difficulty = data.get('difficulty')
 
-    conn = sqlite3.connect('word.db')
+    conn = sqlite3.connect('app_words.db')
     cursor = conn.cursor()
     cursor.execute("UPDATE word SET difficulty=? WHERE word=?", (difficulty, word))
     conn.commit()

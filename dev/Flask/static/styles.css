@@ -250,7 +250,7 @@ h2 {
     align-items: center;
     gap: 24px; /* 调整间距 */
     justify-content: center;
-    flex: 1;
+    /*flex: 1;*/
 }
 
 /* .main-content 的样式 */
@@ -270,7 +270,7 @@ h2 {
 
 /* .webcam-section video 的样式 */
 .webcam-section video {
-    width: 100%;
+    width: 90%;
     height: auto;
     border: 2px solid #007AFF;
     border-radius: 8px;
