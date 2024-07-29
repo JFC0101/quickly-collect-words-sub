@@ -20,7 +20,6 @@ def process_uploaded_image(file):
     #print("Selected texts:", selected_texts)
     return selected_texts, ocr_boxes
 """
-
 #合併process_uploaded_image與process_image，保留process_uploaded_image名稱和process_image的內容
 def process_uploaded_image(file):
     #打開圖像文件，調整方向，並將其轉換為OpenCV可以處理的格式
