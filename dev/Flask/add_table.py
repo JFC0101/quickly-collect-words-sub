@@ -146,7 +146,7 @@ def delete_word_and_related_entries(word_id):
 import sqlite3
 
 # 連接資料庫
-conn = sqlite3.connect('app.db')
+conn = sqlite3.connect('app_words.db')
 cursor = conn.cursor()
 
 # 刪除 user_words 表中相關的行

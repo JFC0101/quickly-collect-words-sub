@@ -177,7 +177,7 @@ h2 {
     border-radius: 16px;
     align-items: center;
     border: 0.4px solid #85D3FF;
-    padding: 24px;
+    padding: 24px 24px 14px 24px;
     margin: 10px;
     display: inline-block;
     vertical-align: top;

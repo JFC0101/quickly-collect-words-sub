@@ -31,7 +31,7 @@ generation_config = {
 
 # 只要呼叫這個 Function，就是去問 Gemini API 單字_details
 def get_word_details(word):
-    system_instruction = f'Input: {word}\nExample Output:\n\nword: explore\npos: verb\npronunciation: KK [ɪkˈsplɔːr]\ndefinition_zh: 探測, 勘查, 探索, 研究\ndefinition_en: to search a place and discover things about it; to examine or discuss a subject in detail.\nsynonyms_en: investigate, examine, inquire into, inspect, look into, probe, research\nsynonyms_zh: 調查, 研究, 查明, 檢查, 探討, 探究, 審查\nexample_en: The explorers set out to explore the unknown territory.\nexample_zh: 探索者們出發去探索未知的領土。\nprefixes: ex- / out, from 向外\nroot: plore / to search 探索\nsuffixes:'
+    system_instruction = f'Input: {word}\nExample Output:\n\nword: explore\npos: verb\npronunciation: KK [ɪkˈsplɔːr]\ndefinition_zh: 探測, 勘查, 探索, 研究\ndefinition_en: to search a place and discover things about it; to examine or discuss a subject in detail.\nsynonyms_en: investigate, examine, inquire into, inspect, look into, probe, research\nsynonyms_zh: 調查, 研究, 查明, 檢查, 探討, 探究, 審查\nexample_en: The explorers set out to explore the unknown territory.\nexample_zh: 探索者們出發去探索未知的領土。\nprefixes: ex- / out, from 向外\nroot: plore / to search 探索\nsuffixes: \n (All zh places use traditional Chinese description.) '
     
     model = genai.GenerativeModel(
         model_name="gemini-1.5-flash",
@@ -86,7 +86,7 @@ def get_word_details(word):
 #這個 fetch_filtered_words() function 是去資料庫查找符合篩選條件資格的單字，所以 index() 或 filter() function 都有呼叫這個函數
 #原本是預計使用 fetch_all-words()，但因為做了篩選功能，所以每次抓資料庫單字時，都是依據篩選結果(start_date, end_date, difficulties)去查找單字
 def fetch_filtered_words(start_date, end_date, difficulties, user_id=1):
-    conn = sqlite3.connect('app.db')
+    conn = sqlite3.connect('app_words.db')
     cursor = conn.cursor()
     query = """
     SELECT w.*, uw.difficulty_id
@@ -124,10 +124,9 @@ def index():
                 'word': word[1],
                 'pos': word[2],
                 'pronunciation': word[3],
-                'definition': word[5],  #zh
-                'example': word[8], #en
+                'definition_zh': word[5],  #zh
+                'example_en': word[8], #en
                 'difficulty_id': word[13],
-                'difficulty_text': '困難' if word[13] == 1 else ('中等' if word[13] == 2 else '簡單'),
             } for word in filtered_words]
         }
         return jsonify(response)
@@ -167,10 +166,10 @@ def filter_words():
                 'word': word[1],
                 'pos': word[2],
                 'pronunciation': word[3],
-                'definition': word[5],  #zh
-                'example': word[8], #en
+                'definition_zh': word[5],  #zh
+                'example_en': word[8], #en
                 'difficulty_id': word[13],
-                'difficulty_text': '困難' if word[13] == 1 else ('中等' if word[13] == 2 else '簡單'),
+                #'difficulty_text': '困難' if word[13] == 1 else ('中等' if word[13] == 2 else '簡單'),
         } for word in words]
     }
     
@@ -187,7 +186,7 @@ def search():
 
     user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
     
-    conn = sqlite3.connect('app.db')
+    conn = sqlite3.connect('app_words.db')
     cursor = conn.cursor()
 
     # 檢查單字是否存在於 words 表中
@@ -196,15 +195,33 @@ def search():
 
     if word_details:
         # 單字存在於 words 表中，檢查是否已添加到 user_words 表中
-        cursor.execute("SELECT * FROM user_words WHERE word_id = ? AND user_id = ?", (word_details[0], user_id))
+        cursor.execute("""
+        SELECT w.*, uw.difficulty_id, uw.query_count, uw.last_query_time
+        FROM user_words uw
+        JOIN words w ON uw.word_id = w.word_id
+        WHERE uw.word_id = ? AND uw.user_id = ?
+    """, (word_details[0], user_id))
         user_word_details = cursor.fetchone()
+        difficulty_id = user_word_details[-3] if user_word_details else 1  # 如果 user_word_details 為空，設置 difficulty_id 為 1
+
+        if user_word_details:
+            # 單字已添加到 user_words 表中，更新 query_count 和 last_query_time
+            cursor.execute("""
+                UPDATE user_words
+                SET query_count = query_count + 1, last_query_time = datetime('now', 'localtime')
+                WHERE word_id = ? AND user_id = ?
+            """, (word_details[0], user_id))
+
+        conn.commit()
         conn.close()
+
         return jsonify({'word': {
             'word': word_details[1],
             'pos':word_details[2],
             'pronunciation': word_details[3],
-            'definition': word_details[4],
+            'definition': word_details[5],
             'example_en': word_details[8],
+            'difficulty_id' : difficulty_id  # 抓上面 assign 給 difficulty_id 的值來設置 json 的 difficulty_id
         }, 'word_in_db': user_word_details is not None})
     else:
         conn.close()
@@ -231,28 +248,26 @@ def add_word():
     user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
 
     
-    conn = sqlite3.connect('app.db')
+    conn = sqlite3.connect('app_words.db')
     cursor = conn.cursor()
     
     # 先檢查單字是否已存在於 words 表中
-    cursor.execute("SELECT word_id, word, pos, pronunciation, definition_en, definition_zh, synonyms_en, synonyms_zh, example_en, example_zh, prefixes, roots, suffixes FROM words WHERE word = ?", (word,))
+    cursor.execute("SELECT * FROM words WHERE word = ?", (word,))
     word_details = cursor.fetchone()
 
     if not word_details:
-        # 單字不存在於 words 表中，需要調用 get_word_details 並添加到 words 表中
-        word_details = get_word_details(word)  # Assume this function fetches word details correctly
-        
+       # 單字不存在於 words 表中，直接添加到 words 表中
         cursor.execute("""
             INSERT INTO words (word, pos, pronunciation, definition_en, definition_zh, synonyms_en, synonyms_zh, example_en, example_zh, prefixes, roots, suffixes)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            word_details['word'], word_details['pos'], word_details['pronunciation'], word_details['definition_en'],
-            word_details['definition_zh'], word_details['synonyms_en'], word_details['synonyms_zh'],
-            word_details['example_en'], word_details['example_zh'], word_details['prefixes'], word_details['roots'],
-            word_details['suffixes']
+            data['word'], data['pos'], data['pronunciation'], data['definition_en'],
+            data['definition_zh'], data['synonyms_en'], data['synonyms_zh'],
+            data['example_en'], data['example_zh'], data['prefixes'], data['roots'],
+            data['suffixes']
         ))
         conn.commit()
-        cursor.execute("SELECT word_id, word, pos, pronunciation, definition_en, definition_zh, synonyms_en, synonyms_zh, example_en, example_zh, prefixes, roots, suffixes FROM words WHERE word = ?", (word,))
+        cursor.execute("SELECT * FROM words WHERE word = ?", (word,))
         word_details = cursor.fetchone()
 
     word_id = word_details[0]  # 在這裡賦值 word_id
@@ -285,7 +300,8 @@ def add_word():
         'example_zh': word_details[9],
         'prefixes': word_details[10],
         'roots': word_details[11],
-        'suffixes': word_details[12]
+        'suffixes': word_details[12],
+        'difficulty_id' : 1 ,
     }
 
 
@@ -301,7 +317,7 @@ def process_words():
     processed_words = []
 
     try:
-        conn = sqlite3.connect('app.db')
+        conn = sqlite3.connect('app_words.db')
         cursor = conn.cursor()
 
         for word_to_search in words:
@@ -421,7 +437,7 @@ def update_difficulty():
     word = data.get('word')
     difficulty_id = data.get('difficulty_id')
 
-    conn = sqlite3.connect('app.db')
+    conn = sqlite3.connect('app_words.db')
     cursor = conn.cursor()
 
     # 先找到對應的 word_id
@@ -429,7 +445,7 @@ def update_difficulty():
     word_id = cursor.fetchone()
 
     if word_id:
-        cursor.execute("UPDATE user_words SET difficulty_id=?, last_update_difficulty_time=CURRENT_TIMESTAMP WHERE user_id=? AND word_id=?", (difficulty_id, user_id, word_id[0]))
+        cursor.execute("UPDATE user_words SET difficulty_id=?, last_update_difficulty_time=datetime('now', 'localtime') WHERE user_id=? AND word_id=?", (difficulty_id, user_id, word_id[0]))
         conn.commit()
         conn.close()
         return jsonify({'message': '難易度已更新'}), 200

@@ -119,11 +119,24 @@
 
     <script> 
     //当页面加载时，首先通过 setDefaultFilters 函数设置默认筛选条件
-        function setDefaultFilters() {
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - 60); //60天
-            document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
-            document.getElementById('endDate').value = new Date().toISOString().split('T')[0];
+        function setDefaultFilters() { 
+            const offset = 8 * 60; // UTC+8 的時間偏移量，以分鐘為單位
+            const now = new Date();
+
+            // 轉換當前時間到 UTC+8
+            const utc8StartDate = new Date(now.getTime() + offset * 60000);
+            const startDate = new Date(utc8StartDate);
+            startDate.setDate(startDate.getDate() - 60); //60天前
+
+            const utc8EndDate = new Date(now.getTime() + offset * 60000);
+            const endDate = new Date(utc8EndDate);
+
+            // 格式化日期
+            const startDateString = startDate.toISOString().split('T')[0];
+            const endDateString = endDate.toISOString().split('T')[0];
+
+            document.getElementById('startDate').value = startDateString;
+            document.getElementById('endDate').value = endDateString;
             document.querySelectorAll('input[name="difficulty"]').forEach(checkbox => checkbox.checked = true);
         }
         
@@ -228,7 +241,7 @@
                                 <div>${word.pronunciation}</div>
                                 <div>${word.pos}</div>
                             </div>
-                            <div class="word-meaning">Ex: ${word.example}</div>
+                            <div class="word-meaning">${word.definition_zh}</div>
                         </a>
                     `;
                     wordContainer.appendChild(wordElement);
@@ -238,11 +251,11 @@
 
         //為了難易度顯示不同顏色的文字設計的
         function getDifficultyClass(difficulty) {
-            return difficulty === 1 ? 'difficult' : (difficulty === 2 ? 'medium' : 'easy');
+            return difficulty === 3 ? 'easy' : (difficulty === 2 ? 'medium' : 'difficult');
         }
         //資料庫是欄位值是 1.2.3 ，我設定 1 = 困難，為了難易度顯示中文，所以在這邊設計顯示的中文
         function getDifficultyText(difficulty) {
-            return difficulty === 1 ? '困難' : (difficulty === 2 ? '中等' : '簡單');
+            return difficulty === 3 ? '簡單' : (difficulty === 2 ? '中等' : '困難');
         }
 
     </script>
@@ -294,10 +307,18 @@
         //搜尋後呈現單字
         function displayWordDetails(data) {
             const container = document.getElementById('word_to_searchContainer');
+            container.innerHTML = ''; // 清空现有内容
+
+            //data.word_in_db 為 falue 時，才會生成 <a> 標籤：
+            const wordLinkStart = !data.word_in_db ? '</a>' : '';
+            const wordLinkEnd = !data.word_in_db ? `<a href="/word?word=${data.word.word}" class="word-link">` : '';
+            //data.word_in_db 為 falue 時，才會生成新增單字的按鈕。之前通過調用 /get_word_details 獲取單字詳細信息，然後將其傳遞給 displayWordDetails 函數。在 displayWordDetails 函數中，當用戶點擊 "新增單字" 按鈕時，這些詳細信息會作為 wordDetails (JSON)參數傳遞給 addWord 函數
+            const addButton = !data.word_in_db ? `<button class="button" onclick='addWord(${JSON.stringify(data.word)})'>新增單字</button>` : '';
+
             container.innerHTML = `
                 <h2>查詢結果</h2>
                 <div class="word-card">
-                    <a href="/word?word=${data.word.word}" class="word-link">
+                    ${wordLinkStart}
                         <div class="word-header">
                             <div>${data.word.word}</div>
                             <div class="difficulty ${getDifficultyClass(data.word.difficulty_id)}">${getDifficultyText(data.word.difficulty_id)}</div>
@@ -306,11 +327,11 @@
                             <div>${data.word.pronunciation}</div>
                             <div>${data.word.pos}</div>
                         </div>
-                            <div class="word-meaning">Ex: ${data.word.example_en}</div>
+                            <div class="word-meaning">${data.word.definition_zh}</div>
                         <div>
-                            ${!data.word_in_db ? `<button class="button" onclick="addWord('${data.word.word}')">新增單字</button>` : ''}
+                            ${addButton}
                         </div>
-                    </a> 
+                    ${wordLinkEnd}
                 </div>
             `;
         }
@@ -328,7 +349,7 @@
         }
 
         //如果用戶按了"新增單字"就請後端去 insert into db，再把資料呈現在前端
-        function addWord(word) {
+        function addWord(wordDetails) {
 
             //載入 loading動畫
             document.getElementById('loadingSpinner').style.display = 'flex';
@@ -336,9 +357,9 @@
             fetch('/add_word', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({word: word}) //将要添加的单词作为 JSON 数据发送
+                body: JSON.stringify(wordDetails) // 將單字詳細信息作為 JSON 數據發送
             })
-            .then(response => response.json()) //如果后端成功处理添加单词的请求并返回成功的响应 json（通常包括单词的详细信息）
+            .then(response => response.json()) // 如果后端成功處理添加單字的請求並返回成功的響應 JSON（通常包括單字的詳細信息）
 
             //處理 json 資料，新增完後要顯示新增的內容，並且要是綠框
             .then(data => {
@@ -354,23 +375,26 @@
                     wordCard.className = 'word-card new-word'; // 添加 'new-word' 类使邊框变绿
                     wordCard.innerHTML = `
                         <a href="/word?word=${wordDetails.word}" class="word-link">
-                            <div class="word-header">${wordDetails.word}</div>
+                            <div class="word-header">
+                                <div>${wordDetails.word}</div>
+                                <div class="difficulty ${getDifficultyClass(wordDetails.difficulty_id)}">${getDifficultyText(wordDetails.difficulty_id)}</div>
+                            </div>    
                             <div class="word-details">
                                 <div>${wordDetails.pronunciation}</div>
                                 <div>${wordDetails.pos}</div>
                             </div>
-                            <div class="word-meaning">Ex: ${wordDetails.example_en}</div>
+                            <div class="word-meaning">${wordDetails.definition_zh}</div>
                         </a>
                     `;
                     container.appendChild(wordCard);
                 } else {
-                    showToast(data.error || '添加單詞失敗，請重整再試一次');
+                    showToast(data.error || '新增單字失敗，請重整再試一次');
                 }
             })
             .catch(error => {
                 document.getElementById('loadingSpinner').style.display = 'none';  // 请求失败，也需要隐藏加载动画
                 console.error('Error adding word:', error);
-                showToast('網路請求失敗');
+                showToast('網路請求失敗'); 
             });
         }
     </script>
