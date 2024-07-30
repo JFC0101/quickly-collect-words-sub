@@ -36,29 +36,30 @@
 
         <div class="word-detail">
             <h1>{{ word[1] }}</h1>
-            <p>KK: {{ word[2] }}</p>
-            <p>型態: {{ word[3] }}</p>
+            <p>{{ word[3] }}</p>
+            <p>型態: {{ word[2] }}</p>
             <p>解釋: {{ word[4] }}</p>
-            <p>英文解釋:</p>
-            <p>同意字</p>
-            <p>例句：</p>
-            <p>例句中文：</p>
-            <p>字根自首：</p>
+            <p>中文意思: {{ word[5] }}</p>
+            <p>同意字： {{ word[6] }}</p>
+            <p>例句：{{ word[8] }}</p>
+            <p>例句中文：{{ word[9] }}</p>
+            <p>字首：{{ word[10] }}</p>
+            <p>字根：{{ word[11] }}</p>
 
 
             <div class = "hori-line"></div>
 
             <div class="difficulty-radio">
                 <label>
-                    <input type="radio" name="difficulty" value="1" {{ 'checked' if word[5] == 1 else '' }}>
+                    <input type="radio" name="difficulty" value="1" {{ 'checked' if word[13] == 1 else '' }}>
                     <span class="difficulty" data-difficulty="1">困難（不熟悉的）</span>
                 </label>
                 <label>
-                    <input type="radio" name="difficulty" value="2" {{ 'checked' if word[5] == 2 else '' }}>
+                    <input type="radio" name="difficulty" value="2" {{ 'checked' if word[13] == 2 else '' }}>
                     <span class="difficulty" data-difficulty="2">中等（有印象的）</span>
                 </label>
                 <label>
-                    <input type="radio" name="difficulty" value="3" {{ 'checked' if word[5] == 3 else '' }}>
+                    <input type="radio" name="difficulty" value="3" {{ 'checked' if word[13] == 3 else '' }}>
                     <span class="difficulty" data-difficulty="3">簡單（已記住的）</span>
                 </label>
             </div>
@@ -80,20 +81,20 @@
         function bindDifficultyClick() {
             $('.difficulty').off('click').on('click', function() {
                 var word = '{{ word[1] }}'; // 單字名稱
-                var difficulty = $(this).data('difficulty'); // 難易度標籤的值
+                var difficulty_id = $(this).data('difficulty'); // 難易度標籤的值
 
                 console.log('Word:', word);
-                console.log('Difficulty:', difficulty);
+                console.log('Difficulty_id:', difficulty_id);
 
-                updateWordDifficulty(word, difficulty);
+                updateWordDifficulty(word, difficulty_id);
             });
         }
 
-        function updateWordDifficulty(word, difficulty) {
+        function updateWordDifficulty(word, difficulty_id) {
             $.ajax({
                 type: 'POST',
                 url: '/update_difficulty',
-                data: JSON.stringify({'word': word, 'difficulty': difficulty}), 
+                data: JSON.stringify({'word': word, 'difficulty_id': difficulty_id}), 
                 contentType: 'application/json',
                 success: function(response) {
                     console.log('難易度已更新');

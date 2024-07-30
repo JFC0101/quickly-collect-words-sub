@@ -3,6 +3,7 @@ import sqlite3
 import google.generativeai as genai
 import os
 from datetime import datetime, timedelta
+import re
 
 
 app = Flask(__name__)
@@ -21,72 +22,94 @@ genai.configure(api_key=api_key)
 
 # Define generation configuration
 generation_config = {
-    "temperature": 1,
+    "temperature": 1, 
     "top_p": 0.95,
-    "top_k": 64,
+    "top_k": 64, #當 TopK=1 (A)，代表每一次都是選擇最大可能性的那個字
     "max_output_tokens": 8192,
     "response_mime_type": "text/plain",
 }
 
 # 只要呼叫這個 Function，就是去問 Gemini API 單字_details
 def get_word_details(word):
+    system_instruction = f'Input: {word}\nExample Output:\n\nword: explore\npos: verb\npronunciation: KK [ɪkˈsplɔːr]\ndefinition_zh: 探測, 勘查, 探索, 研究\ndefinition_en: to search a place and discover things about it; to examine or discuss a subject in detail.\nsynonyms_en: investigate, examine, inquire into, inspect, look into, probe, research\nsynonyms_zh: 調查, 研究, 查明, 檢查, 探討, 探究, 審查\nexample_en: The explorers set out to explore the unknown territory.\nexample_zh: 探索者們出發去探索未知的領土。\nprefixes: ex- / out, from 向外\nroot: plore / to search 探索\nsuffixes:'
+    
     model = genai.GenerativeModel(
         model_name="gemini-1.5-flash",
         generation_config=generation_config,
-        system_instruction=f'input:{word},output ex:Word: explore\nPronunciation: /ɪkˈsplɔːr/\nDefinition: 探索, 調查 \nExample: The best way to explore the countryside is on foot.'
+        system_instruction=system_instruction
     )
 
     response = model.generate_content({word})
     print('成功呼叫了gemini api 取得單字意思')
-    #這邊要依據 Gemini 回傳的訊息，整理成一個 dictionary，裡面放了單字所有的意思
+    
     if response:
         response_text = response.text
         
-        # Find word
-        start_index = response_text.find('Word:') + len('Word:')
-        end_index = response_text.find('\n', start_index)
-        word = response_text[start_index:end_index].strip()
-        
-        # Find pronunciation
-        start_index = response_text.find('Pronunciation:') + len('Pronunciation:')
-        end_index = response_text.find('\n', start_index)
-        pronunciation = response_text[start_index:end_index].strip()
-        
-        # Find definition
-        start_index = response_text.find('Definition:') + len('Definition:')
-        end_index = response_text.find('Example:', start_index)
-        definition = response_text[start_index:end_index].strip()
-        
-        # Find example
-        start_index = response_text.find('Example:') + len('Example:')
-        example = response_text[start_index:].strip()
+        def clean_text(text):  #把一些多餘的字刪除
+            return re.sub(r'[\*\*/]', '', text).strip()
+
+        def extract_field(field_name):
+            start_index = response_text.find(f'{field_name}:') + len(f'{field_name}:')
+            end_index = response_text.find('\n', start_index)
+            return clean_text(response_text[start_index:end_index])
+
+        word = extract_field('word')
+        pos = extract_field('pos')
+        pronunciation = extract_field('pronunciation')
+        definition_en = extract_field('definition_en')
+        definition_zh = extract_field('definition_zh')
+        synonyms_en = extract_field('synonyms_en')
+        synonyms_zh = extract_field('synonyms_zh')
+        example_en = extract_field('example_en')
+        example_zh = extract_field('example_zh')
+        prefixes = extract_field('prefixes')
+        roots = extract_field('roots')
+        suffixes = extract_field('suffixes')
+
         return {
             'word': word,
+            'pos': pos,
             'pronunciation': pronunciation,
-            'definition': definition,
-            'example': example
-            #照理說這邊還要有一堆
+            'definition_en': definition_en,
+            'definition_zh': definition_zh,
+            'synonyms_en': synonyms_en,
+            'synonyms_zh': synonyms_zh,
+            'example_en': example_en,
+            'example_zh': example_zh,
+            'prefixes': prefixes,
+            'roots': roots,
+            'suffixes': suffixes
         }
     return None
 
 #------------------------#
 #這個 fetch_filtered_words() function 是去資料庫查找符合篩選條件資格的單字，所以 index() 或 filter() function 都有呼叫這個函數
 #原本是預計使用 fetch_all-words()，但因為做了篩選功能，所以每次抓資料庫單字時，都是依據篩選結果(start_date, end_date, difficulties)去查找單字
-def fetch_filtered_words(start_date, end_date, difficulties):
-    conn = sqlite3.connect('app_words.db')
+def fetch_filtered_words(start_date, end_date, difficulties, user_id=1):
+    conn = sqlite3.connect('app.db')
     cursor = conn.cursor()
-    query = "SELECT * FROM word WHERE created_at BETWEEN ? AND ? AND difficulty IN ({seq}) ORDER BY id DESC".format(
-        seq=','.join(['?']*len(difficulties))
-    )
-    cursor.execute(query, (start_date, end_date, *difficulties))
+    query = """
+    SELECT w.*, uw.difficulty_id
+    FROM user_words uw
+    JOIN words w ON uw.word_id = w.word_id
+    WHERE uw.create_time BETWEEN ? AND ? 
+    AND uw.difficulty_id IN ({seq})
+    AND uw.user_id = ?
+    ORDER BY uw.word_id DESC
+    """.format(seq=','.join(['?']*len(difficulties)))
+    cursor.execute(query, (start_date, end_date, *difficulties, user_id))
     words = cursor.fetchall()
     conn.close()
     return words
+
 
 #------------------------#
 #当页面加载时，首先通过 html 中的 applyDefaultFilter 函數由前端送預設的篩選內容給後端，後端去找符合篩選結果的單字 (fetch_filtered_words) 包裝成 json 給前端
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+
+
     #从 POST 请求的 JSON 数据中提取 startDate、endDate、difficulties 和 newWords。
     if request.method == 'POST':
         data = request.get_json()
@@ -94,29 +117,26 @@ def index():
         end_date = data.get('endDate')
         difficulties = data.get('difficulties')
 
+        filtered_words = fetch_filtered_words(start_date, end_date, difficulties, user_id)
+        response = {
+            'words': [{
+                'word_id':word[0],
+                'word': word[1],
+                'pos': word[2],
+                'pronunciation': word[3],
+                'definition': word[5],  #zh
+                'example': word[8], #en
+                'difficulty_id': word[13],
+                'difficulty_text': '困難' if word[13] == 1 else ('中等' if word[13] == 2 else '簡單'),
+            } for word in filtered_words]
+        }
+        return jsonify(response)
     else:
         start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d') + 'T00:00:00'
         end_date = datetime.now().strftime('%Y-%m-%d') + 'T23:59:59'
         difficulties = [1, 2, 3]
-    
-    filtered_words = fetch_filtered_words(start_date, end_date, difficulties)
 
-    # 把 filtered_words 變成 json 送給前端
-    if request.method == 'POST':
-        return jsonify({
-            'words': [{
-                'word': word[1],
-                'pronunciation': word[2],
-                'definition': word[4],
-                'difficulty': word[5],
-                'difficulty_text': '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單'),
-                'type': word[3]
-            } for word in filtered_words],
-            'start_date': start_date,
-            'end_date': end_date,
-            'difficulties': difficulties
-        })
-    else:
+        filtered_words = fetch_filtered_words(start_date, end_date, difficulties, user_id)
         return render_template('index.html', words=filtered_words, start_date=start_date, end_date=end_date, difficulties=difficulties)
 
 
@@ -126,6 +146,7 @@ def index():
 # 前端页面获取用户设置的筛选条件，发送这些条件到服务器(後端)进行数据过滤，然后更新页面上的词汇列表
 @app.route('/filter', methods=['POST'])
 def filter_words():
+    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
 
     #从请求体中获取 JSON 数据，并提取 startDate、endDate 和 difficulties
     data = request.get_json()
@@ -134,22 +155,24 @@ def filter_words():
     difficulties = data.get('difficulties', [])
 
     #用fetch_filtered_words() 查找資料庫符合結果的單字們
-    words = fetch_filtered_words(start_date, end_date, difficulties)
+    words = fetch_filtered_words(start_date, end_date, difficulties, user_id)
     
     # 為了看有沒有運作，所以 print 一下有處理了
     print(f"Filtered words: filter_words() success")
 
     #处理查询结果，将每个单词的信息格式化为 JSON 对象，包括 word、pronunciation、definition、difficulty、difficulty_text 和 type
-    response = {'words': [
-        {
-            'word': word[1],
-            'pronunciation': word[2],
-            'definition': word[4],
-            'difficulty': word[5],
-            'difficulty_text': '困難' if word[5] == 1 else ('中等' if word[5] == 2 else '簡單'),
-            'type': word[3]
-        } for word in words
-    ]}
+    response = {
+        'words': [{
+                'word_id':word[0],
+                'word': word[1],
+                'pos': word[2],
+                'pronunciation': word[3],
+                'definition': word[5],  #zh
+                'example': word[8], #en
+                'difficulty_id': word[13],
+                'difficulty_text': '困難' if word[13] == 1 else ('中等' if word[13] == 2 else '簡單'),
+        } for word in words]
+    }
     
     return jsonify(response)
 
@@ -160,21 +183,31 @@ def filter_words():
 @app.route('/search', methods=['POST'])
 def search():
     data = request.get_json()
-    word_to_search = data['word']
-    conn = sqlite3.connect('app_words.db')
+    word_to_search = data['word'] #前端給的 word assign 給 word_to_search
+
+    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+    
+    conn = sqlite3.connect('app.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM word WHERE word=?", (word_to_search,))
+
+    # 檢查單字是否存在於 words 表中
+    cursor.execute("SELECT * FROM words WHERE word = ?", (word_to_search,))
     word_details = cursor.fetchone()
-    conn.close()
+
     if word_details:
+        # 單字存在於 words 表中，檢查是否已添加到 user_words 表中
+        cursor.execute("SELECT * FROM user_words WHERE word_id = ? AND user_id = ?", (word_details[0], user_id))
+        user_word_details = cursor.fetchone()
+        conn.close()
         return jsonify({'word': {
             'word': word_details[1],
-            'pronunciation': word_details[2],
-            'definition': word_details[3],
-            'example': word_details[4],
-            'difficulty': word_details[5]
-        }, 'word_in_db': True})
+            'pos':word_details[2],
+            'pronunciation': word_details[3],
+            'definition': word_details[4],
+            'example_en': word_details[8],
+        }, 'word_in_db': user_word_details is not None})
     else:
+        conn.close()
         return jsonify({'word': None})
 
 #因為後端說資料庫沒有({'word': None})，前端就呼叫後端這個函數，請後端去問 gemini (get_word_details)，把單字的意思包裝json給前端
@@ -185,7 +218,7 @@ def api_get_word_details():
         return jsonify({'error': '沒有指定單詞'}), 400
     try:
         word_details = get_word_details(word_to_search)
-        return jsonify(word_details)
+        return jsonify(word_details) #將 get_word_details() return 的 dictionary 包裝成 JSON 送到前端
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -195,23 +228,68 @@ def api_get_word_details():
 def add_word():
     data = request.get_json()
     word = data['word']
-    word_details = get_word_details(word)  # Assume this function fetches word details correctly
-    if word_details:
-        conn = sqlite3.connect('app_words.db')
-        cursor = conn.cursor()
-        try:
-            cursor.execute("INSERT INTO word (word, pronunciation, definition, example, difficulty) VALUES (?, ?, ?, ?, ?)",
-                           (word_details['word'], word_details['pronunciation'], word_details['definition'], word_details['example'], 1))
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            print(f"Database error: {str(e)}")
-            return jsonify({'error': '數據庫錯誤'}), 500
-        finally:
-            conn.close()
-        return jsonify({'success': '新增成功', 'word_details': word_details})
-    else:
-        return jsonify({'error': '無法獲取單字詳細內容'}), 404
+    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+
+    
+    conn = sqlite3.connect('app.db')
+    cursor = conn.cursor()
+    
+    # 先檢查單字是否已存在於 words 表中
+    cursor.execute("SELECT word_id, word, pos, pronunciation, definition_en, definition_zh, synonyms_en, synonyms_zh, example_en, example_zh, prefixes, roots, suffixes FROM words WHERE word = ?", (word,))
+    word_details = cursor.fetchone()
+
+    if not word_details:
+        # 單字不存在於 words 表中，需要調用 get_word_details 並添加到 words 表中
+        word_details = get_word_details(word)  # Assume this function fetches word details correctly
+        
+        cursor.execute("""
+            INSERT INTO words (word, pos, pronunciation, definition_en, definition_zh, synonyms_en, synonyms_zh, example_en, example_zh, prefixes, roots, suffixes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            word_details['word'], word_details['pos'], word_details['pronunciation'], word_details['definition_en'],
+            word_details['definition_zh'], word_details['synonyms_en'], word_details['synonyms_zh'],
+            word_details['example_en'], word_details['example_zh'], word_details['prefixes'], word_details['roots'],
+            word_details['suffixes']
+        ))
+        conn.commit()
+        cursor.execute("SELECT word_id, word, pos, pronunciation, definition_en, definition_zh, synonyms_en, synonyms_zh, example_en, example_zh, prefixes, roots, suffixes FROM words WHERE word = ?", (word,))
+        word_details = cursor.fetchone()
+
+    word_id = word_details[0]  # 在這裡賦值 word_id
+
+    try:
+        # 插入到 user_words 表中
+        cursor.execute("""
+        INSERT INTO user_words (user_id, word_id, difficulty_id)
+        VALUES (?, ?, ?)
+        """, (user_id, word_id, 1))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        print(f"Database error: {str(e)}")
+        return jsonify({'error': '數據庫錯誤'}), 500
+    finally:
+        conn.close()
+
+    # 構建返回的 word_details 字典
+    word_details_dict = {
+        'word_id': word_details[0],
+        'word': word_details[1],
+        'pos': word_details[2],
+        'pronunciation': word_details[3],
+        'definition_en': word_details[4],
+        'definition_zh': word_details[5],
+        'synonyms_en': word_details[6],
+        'synonyms_zh': word_details[7],
+        'example_en': word_details[8],
+        'example_zh': word_details[9],
+        'prefixes': word_details[10],
+        'roots': word_details[11],
+        'suffixes': word_details[12]
+    }
+
+
+    return jsonify({'success': '新增成功', 'word_details': word_details_dict})
 
 #------------------------#
     
@@ -219,25 +297,47 @@ def add_word():
 @app.route('/process_words', methods=['POST'])
 def process_words():
     words = request.json.get('words', [])
+    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
     processed_words = []
 
     try:
-        conn = sqlite3.connect('app_words.db')
+        conn = sqlite3.connect('app.db')
         cursor = conn.cursor()
 
         for word_to_search in words:
-            cursor.execute("SELECT * FROM word WHERE word=?", (word_to_search,))
+            print('word_to_search1',word_to_search)
+            cursor.execute("SELECT * FROM words WHERE word=?", (word_to_search,))
             word_details = cursor.fetchone()
 
-            if word_details:
+            if word_details:  #如果單字已存在於 words 表中，直接將單字添加到 user_words 表中。
+                word_id = word_details[0]
+                cursor.execute("INSERT OR IGNORE INTO user_words (user_id, word_id, difficulty_id) VALUES (?, ?, ?)", #使用 INSERT OR IGNORE 確保不會重複插入相同的單字到 user_words 表中。
+                               (user_id, word_id, 1)) #難易度預設為1
+                conn.commit()
                 processed_words.append(word_to_search)
-            else:
+            else: #如果單字不存在於 words 表中，使用 get_word_details 函數獲取單字詳細信息，並將單字添加到 words 表中，然後再將其添加到 user_words 表中。
+                print('word_to_search2',word_to_search)
                 word = get_word_details(word_to_search)
                 if word:
-                    cursor.execute("INSERT INTO word (word, pronunciation, definition, example, difficulty) VALUES (?, ?, ?, ?, ?)",
-                                   (word['word'], word['pronunciation'], word['definition'], word['example'], 1))
+                    print('word_to_search3',word_to_search)
+                    cursor.execute("""
+                    INSERT INTO words (word, pos, pronunciation, definition_en, definition_zh, synonyms_en, synonyms_zh, example_en, example_zh, prefixes, roots, suffixes) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        word['word'], word['pos'], word['pronunciation'], word['definition_en'], word['definition_zh'], 
+                        word['synonyms_en'], word['synonyms_zh'], word['example_en'], word['example_zh'], 
+                        word['prefixes'], word['roots'], word['suffixes']
+                    ))
+                    conn.commit()
+                    cursor.execute("SELECT word_id FROM words WHERE word=?", (word_to_search,))
+                    word_id = cursor.fetchone()[0]
+                    cursor.execute("INSERT INTO user_words (user_id, word_id, difficulty_id) VALUES (?, ?, ?)",
+                                   (user_id, word_id, 1)) #難易度預設為1
                     conn.commit()
                     processed_words.append(word_to_search)
+                else:
+                    print(f"Error: Could not fetch details for word '{word_to_search}'")
+                    return jsonify({'error': f"Could not fetch details for word '{word_to_search}'"}), 500
 
         conn.close()
     except Exception as e:
@@ -291,8 +391,6 @@ def upload():
 
             # 调用process_uploaded_image函数处理上传的图片
 
-#修正return項目
-#            selected_texts, ocr_boxes = process_uploaded_image(filepath)
             image, selected_texts, ocr_boxes = process_uploaded_image(filepath)
 
             processed_image_path = 'processed_image.jpg'
@@ -318,39 +416,50 @@ def word_preview():
 # 在 word.html 裡面點擊難易度 label 呼叫後端進行 update_difficulty() function 運行，更新難易度
 @app.route('/update_difficulty', methods=['POST'])
 def update_difficulty():
+    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
     data = request.get_json()
     word = data.get('word')
-    difficulty = data.get('difficulty')
+    difficulty_id = data.get('difficulty_id')
 
-    conn = sqlite3.connect('app_words.db')
+    conn = sqlite3.connect('app.db')
     cursor = conn.cursor()
-    cursor.execute("UPDATE word SET difficulty=? WHERE word=?", (difficulty, word))
-    conn.commit()
-    conn.close()
 
-    return jsonify({'message': '難易度已更新'}), 200
+    # 先找到對應的 word_id
+    cursor.execute("SELECT word_id FROM words WHERE word=?", (word,))
+    word_id = cursor.fetchone()
+
+    if word_id:
+        cursor.execute("UPDATE user_words SET difficulty_id=?, last_update_difficulty_time=CURRENT_TIMESTAMP WHERE user_id=? AND word_id=?", (difficulty_id, user_id, word_id[0]))
+        conn.commit()
+        conn.close()
+        return jsonify({'message': '難易度已更新'}), 200
+    else:
+        conn.close()
+        return jsonify({'error': '單字未找到'}), 404
 
 
 # 進到 word.html 時，就執行 word_detail()，為了顯示這個單字所有詳細解釋，以及讓上一頁下一頁的按鈕功能正常
 # [尚未完成] 這邊應該要依據首頁當時的篩選結果來設定start_date, end_date, difficulties
 @app.route('/word')
 def word_detail():
-    word_name = request.args.get('word')
+    word_name = request.args.get('word') #先解讀 url 上面的 word，並將 word assign 給 word_name
+    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
 
     start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d') + 'T00:00:00'
     end_date = datetime.now().strftime('%Y-%m-%d') + 'T23:59:59'
     difficulties = [1, 2, 3]
 
-    words = fetch_filtered_words(start_date, end_date, difficulties)
+    words = fetch_filtered_words(start_date, end_date, difficulties, user_id)  #呼叫 fetch_filtered_words 將所有符合條件的單字列出來 assign 給 words
     word_index = next((i for i, w in enumerate(words) if w[1] == word_name), None)
     if word_index is None:
         return "Word not found", 404
 
-    word = words[word_index]
+    word = words[word_index] #words[word_index]會把第 n 個單字，這個單字的所有意思都抓出來，把這個單字都 assign 給 word
+    print(word)
     prev_word = words[word_index - 1] if word_index > 0 else None
     next_word = words[word_index + 1] if word_index < len(words) - 1 else None
 
-    return render_template('word.html', word=word, prev_word=prev_word, next_word=next_word)
+    return render_template('word.html', word=word, prev_word=prev_word, next_word=next_word) #將單字內容、上一頁、下一頁的內容，以 jinja2 的方式傳給前端，屬於 python 與 html 一種溝通方式
 
 #------------------------#
 
@@ -361,6 +470,5 @@ def about():
 
 
 
-
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

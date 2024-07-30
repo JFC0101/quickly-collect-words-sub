@@ -213,22 +213,22 @@
             if (words.length === 0) {
                 wordContainer.innerHTML = '<p>No words found.</p>'; //words 数组长度。如果数组为空（即没有单词），则在容器中显示 "No words found."
             } else {
-                words.forEach(word => {
+                words.forEach(word => { //把 words 這個 json 裡面所有 word 內容都拿出來分別放到各個位子
                     const isWordNew = newWords.includes(word.word);  // 检查该单词是否在新单词列表中
                     const wordElement = document.createElement('div'); //遍历单词列表: 如果 words 数组中有单词，函数将遍历每个单词，并为每个单词创建一个 HTML 元素（div）。
 
                     wordElement.className = 'word-card' + (isWordNew ? ' new-word' : ''); //这个元素被赋予类名 word-card，如果该单词也存在于 newWords 数组中，额外添加 new-word 类，这样就会应用绿色边框的样式。
-                    wordElement.innerHTML = `
+                    wordElement.innerHTML = ` 
                         <a href="/word?word=${word.word}" class="word-link">
                             <div class="word-header">
                                 <div>${word.word}</div>
-                                <div class="difficulty ${getDifficultyClass(word.difficulty)}">${getDifficultyText(word.difficulty)}</div>
+                                <div class="difficulty ${getDifficultyClass(word.difficulty_id)}">${getDifficultyText(word.difficulty_id)}</div>
                             </div>
                             <div class="word-details">
-                                <div>KK ${word.pronunciation}</div>
-                                <div>型態 ${word.type}</div>
+                                <div>${word.pronunciation}</div>
+                                <div>${word.pos}</div>
                             </div>
-                            <div class="word-meaning">解釋 ${word.definition}</div>
+                            <div class="word-meaning">Ex: ${word.example}</div>
                         </a>
                     `;
                     wordContainer.appendChild(wordElement);
@@ -297,15 +297,20 @@
             container.innerHTML = `
                 <h2>查詢結果</h2>
                 <div class="word-card">
-                    <div class="word-header">${data.word.word}</div>
-                    <div class="word-details">
-                        <div>KK: ${data.word.pronunciation}</div>
-                        <div>型態: ${data.word.definition}</div>
-                    </div>
-                        <div class="word-meaning">解釋: ${data.word.example}</div>
-                    <div>
-                        ${!data.word_in_db ? `<button class="button" onclick="addWord('${data.word.word}')">新增單字</button>` : ''}
-                    </div>
+                    <a href="/word?word=${data.word.word}" class="word-link">
+                        <div class="word-header">
+                            <div>${data.word.word}</div>
+                            <div class="difficulty ${getDifficultyClass(data.word.difficulty_id)}">${getDifficultyText(data.word.difficulty_id)}</div>
+                        </div>    
+                        <div class="word-details">
+                            <div>${data.word.pronunciation}</div>
+                            <div>${data.word.pos}</div>
+                        </div>
+                            <div class="word-meaning">Ex: ${data.word.example_en}</div>
+                        <div>
+                            ${!data.word_in_db ? `<button class="button" onclick="addWord('${data.word.word}')">新增單字</button>` : ''}
+                        </div>
+                    </a> 
                 </div>
             `;
         }
@@ -348,12 +353,14 @@
                     const wordCard = document.createElement('div');
                     wordCard.className = 'word-card new-word'; // 添加 'new-word' 类使邊框变绿
                     wordCard.innerHTML = `
-                        <div class="word-header">${wordDetails.word}</div>
-                        <div class="word-details">
-                            <div>KK: ${wordDetails.pronunciation}</div>
-                            <div>型態: ${wordDetails.definition}</div>
-                        </div>
-                        <div class="word-meaning">解釋: ${wordDetails.example}</div>
+                        <a href="/word?word=${wordDetails.word}" class="word-link">
+                            <div class="word-header">${wordDetails.word}</div>
+                            <div class="word-details">
+                                <div>${wordDetails.pronunciation}</div>
+                                <div>${wordDetails.pos}</div>
+                            </div>
+                            <div class="word-meaning">Ex: ${wordDetails.example_en}</div>
+                        </a>
                     `;
                     container.appendChild(wordCard);
                 } else {
