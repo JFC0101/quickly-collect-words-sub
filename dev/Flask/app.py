@@ -4,6 +4,9 @@ import google.generativeai as genai
 import os
 from datetime import datetime, timedelta
 import re
+from image_processor import process_uploaded_image
+from werkzeug.utils import secure_filename
+from image_processor_yolo5 import process_uploaded_image_yolo
 
 
 app = Flask(__name__)
@@ -169,7 +172,6 @@ def filter_words():
                 'definition_zh': word[5],  #zh
                 'example_en': word[8], #en
                 'difficulty_id': word[13],
-                #'difficulty_text': '困難' if word[13] == 1 else ('中等' if word[13] == 2 else '簡單'),
         } for word in words]
     }
     
@@ -367,10 +369,6 @@ def process_words():
 
 
 #------------------------#
-#from main import process_uploaded_image  #Monday自己測試的版本
-from image_processor import process_uploaded_image
-from werkzeug.utils import secure_filename
-
 #处理文件上传请求，保存上传的文件到指定的文件夹中
 @app.route('/upload_file', methods=['POST'])
 def upload_file():
@@ -398,6 +396,7 @@ def upload():
     if request.method == 'POST':
         #這個應該是把處理過的圖片呼叫出來
         uploaded_file = request.files.get('file')
+        model = request.form.get('model')
 
         if uploaded_file:
             # 保存文件到指定目录
@@ -405,9 +404,13 @@ def upload():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             uploaded_file.save(filepath)
 
-            # 调用process_uploaded_image函数处理上传的图片
-
-            image, selected_texts, ocr_boxes = process_uploaded_image(filepath)
+            # 调用process_uploaded_image函数处理上传的图片         
+            if model == 'yolo':
+                image, selected_texts, ocr_boxes, file_path  = process_uploaded_image_yolo(filepath)
+            elif model == 'ocr':
+                image, selected_texts, ocr_boxes = process_uploaded_image(filepath)
+            else:
+                return jsonify({"error": "Unknown model selected"}), 400
 
             processed_image_path = 'processed_image.jpg'
 
