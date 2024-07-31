@@ -163,7 +163,7 @@ h2 {
 
 
 .word-list {
-    max-width: 1116px;
+    max-width: 1118px;
     display: inline-flex;
     flex-direction: column;
     justify-content: center; /* This centers the content inside the team-list if there's any */

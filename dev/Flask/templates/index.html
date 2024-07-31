@@ -309,9 +309,9 @@
             const container = document.getElementById('word_to_searchContainer');
             container.innerHTML = ''; // 清空现有内容
 
-            //data.word_in_db 為 falue 時，才會生成 <a> 標籤：
-            const wordLinkStart = !data.word_in_db ? '</a>' : '';
-            const wordLinkEnd = !data.word_in_db ? `<a href="/word?word=${data.word.word}" class="word-link">` : '';
+            //data.word_in_db 為 true 時，才會生成 <a> 標籤：
+            const wordLinkStart = data.word_in_db ? `<a href="/word?word=${data.word.word}" class="word-link">` : '';
+            const wordLinkEnd = data.word_in_db ? '</a>' : '';
             //data.word_in_db 為 falue 時，才會生成新增單字的按鈕。之前通過調用 /get_word_details 獲取單字詳細信息，然後將其傳遞給 displayWordDetails 函數。在 displayWordDetails 函數中，當用戶點擊 "新增單字" 按鈕時，這些詳細信息會作為 wordDetails (JSON)參數傳遞給 addWord 函數
             const addButton = !data.word_in_db ? `<button class="button" onclick='addWord(${JSON.stringify(data.word)})'>新增單字</button>` : '';
 

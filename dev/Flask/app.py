@@ -219,7 +219,7 @@ def search():
             'word': word_details[1],
             'pos':word_details[2],
             'pronunciation': word_details[3],
-            'definition': word_details[5],
+            'definition_zh': word_details[5],
             'example_en': word_details[8],
             'difficulty_id' : difficulty_id  # 抓上面 assign 給 difficulty_id 的值來設置 json 的 difficulty_id
         }, 'word_in_db': user_word_details is not None})
