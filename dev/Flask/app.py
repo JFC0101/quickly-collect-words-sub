@@ -333,13 +333,15 @@ def process_words():
                                (user_id, word_id, 1)) #難易度預設為1
                 conn.commit()
                 processed_words.append(word_to_search)
+                toast_message = '新增成功'
+                
             else: #如果單字不存在於 words 表中，使用 get_word_details 函數獲取單字詳細信息，並將單字添加到 words 表中，然後再將其添加到 user_words 表中。
                 print('word_to_search2',word_to_search)
                 word = get_word_details(word_to_search)
                 if word:
                     print('word_to_search3',word_to_search)
                     cursor.execute("""
-                    INSERT INTO words (word, pos, pronunciation, definition_en, definition_zh, synonyms_en, synonyms_zh, example_en, example_zh, prefixes, roots, suffixes) 
+                    INSERT OR IGNORE INTO words (word, pos, pronunciation, definition_en, definition_zh, synonyms_en, synonyms_zh, example_en, example_zh, prefixes, roots, suffixes) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (
                         word['word'], word['pos'], word['pronunciation'], word['definition_en'], word['definition_zh'], 
@@ -348,11 +350,20 @@ def process_words():
                     ))
                     conn.commit()
                     cursor.execute("SELECT word_id FROM words WHERE word=?", (word_to_search,))
-                    word_id = cursor.fetchone()[0]
-                    cursor.execute("INSERT INTO user_words (user_id, word_id, difficulty_id) VALUES (?, ?, ?)",
-                                   (user_id, word_id, 1)) #難易度預設為1
-                    conn.commit()
-                    processed_words.append(word_to_search)
+                    result = cursor.fetchone()
+                    if result:  # 確保 result 不是 None
+                        word_id = result[0]
+                        cursor.execute("INSERT INTO user_words (user_id, word_id, difficulty_id) VALUES (?, ?, ?)",
+                                       (user_id, word_id, 1))  # 難易度預設為1
+                        conn.commit()
+                        processed_words.append(word_to_search)
+                        toast_message = '新增成功'
+                    else:
+                        print(f"Error: Could not find word '{word_to_search}' after insertion")
+                        toast_message = '連線不穩，請再試一次'
+                        return jsonify({'error': f"Could not find word '{word_to_search}' after insertion"}), 500
+                    
+                    
                 else:
                     print(f"Error: Could not fetch details for word '{word_to_search}'")
                     return jsonify({'error': f"Could not fetch details for word '{word_to_search}'"}), 500
@@ -363,7 +374,6 @@ def process_words():
         return jsonify({'error': 'Error processing words'}), 500
 
     # 返回JSON响应给 word-preview.html 的 js
-    toast_message = '新增成功'
     new_words_query = ",".join(processed_words)
     return redirect(f'/?new_words={new_words_query}&toast={toast_message}')
 

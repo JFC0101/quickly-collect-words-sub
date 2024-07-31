@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", function() {
         // 將 <canvas> 的內容轉換為 blob，並調用 uploadBlob 函數上傳。
         canvas.toBlob(function(blob) {
             if(blob) {
-                uploadBlob(blob, getSelectedModel());
+                uploadBlob(blob);
             } else {
                 console.error('Failed to convert canvas to blob.');
             }
@@ -62,9 +62,13 @@ document.addEventListener("DOMContentLoaded", function() {
     //將webcam畫面執行上傳圖像，並且執行 upload 函數處理後續要顯示的單字
     function uploadBlob(blob) {
         const formData = new FormData(); //創建 FormData 對象，並將 blob 文件添加到 FormData 中。
+        const model = getSelectedModel();
         formData.append('file', blob, 'capture.jpg');
         formData.append('model', model);
 
+        //載入 loading 動畫
+        document.getElementById('loadingSpinner').style.display = 'flex';
+        
         fetch('/upload_file', { //使用 fetch 向 /upload_file 發送 POST 請求，上傳圖像文件。
             method: 'POST',
             body: formData
