@@ -45,11 +45,7 @@ body {
     padding: 0 0px ; /* 調整 padding 值來增加空間 */
 }
 
-.header img {
-    width: 50px;
-    height: 50px;
-    border-radius: 9999px;
-}
+
 
 .header nav {
     display: flex;
@@ -64,18 +60,6 @@ body {
     opacity: 0.80;
 }
 
-.user {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.user-icon {
-    width: 23px;
-    height: 23px;
-    background: #D9D9D9;
-    border-radius: 50%;
-}
 
 
 
@@ -963,4 +947,142 @@ body {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+
+/*login頁面*/
+.login-container {
+    max-width: 400px;
+    margin: 100px auto;
+    padding: 40px;
+    background: #fafbfc;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.login-container h1 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #333;
+}
+
+.login-container form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.login-container input[type="text"],
+.login-container input[type="password"] {
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #148ff1;
+    border-radius: 5px;
+    font-size: 16px;
+    width: 100%;
+    max-width: 300px;
+    transition: border-color 0.3s;
+}
+
+.login-container input[type="text"]:focus,
+.login-container input[type="password"]:focus {
+    border-color: #0056b3;
+}
+
+.login-container button {
+    padding: 10px;
+    margin-top: 20px;
+    border: none;
+    background-color: #ccc;
+    color: white;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: not-allowed;
+    width: 100%;
+    max-width: 300px;
+    transition: background-color 0.3s, cursor 0.3s;
+}
+
+.login-container button.active {
+    background-color: #148ff1;
+    cursor: pointer;
+}
+
+.login-container button.active:hover {
+    background-color: #0056b3;
+}
+
+.error-message-login {
+    color: #FB3A1F;
+    margin-top: 10px;
+}
+
+.user-dropdown {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px 0;
+
+}
+.logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 9999px;
+}
+
+.header .user {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.header .user a {
+    text-decoration: none;
+    color: #148ff1;
+    font-weight: bold;
+}
+.user-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #ffffff;
+    min-width: 160px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    right: -64px;
+    top: 36px;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: #f1f1f1;
+}
+
+.user-dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* 下拉選單樣式 */
+.user-options {
+    margin-left: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
 }

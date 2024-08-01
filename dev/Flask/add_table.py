@@ -4,7 +4,7 @@ from datetime import datetime
 import random
 
 # 連接資料庫
-conn = sqlite3.connect('app.db')
+conn = sqlite3.connect('app_words.db')
 cursor = conn.cursor()
 
 cursor.execute("""
@@ -121,7 +121,7 @@ import sqlite3
 
 def delete_word_and_related_entries(word_id):
     try:
-        conn = sqlite3.connect('app.db')
+        conn = sqlite3.connect('app_words.db')
         cursor = conn.cursor()
         
         # 刪除 user_words 表中相關的行
@@ -139,10 +139,12 @@ def delete_word_and_related_entries(word_id):
             conn.close()
 
 # 刪除 word_id = 3 的行
-# delete_word_and_related_entries(3)
+#delete_word_and_related_entries(4)
+
+
 
 #--------------------------#
-
+''' 刪除 user_words 表中相關的行
 import sqlite3
 
 # 連接資料庫
@@ -160,3 +162,50 @@ print(f"Deleted user_words table entry with user_id = 1 and word_id = 1")
 
 # 關閉資料庫連接
 conn.close()
+'''
+#--------------#
+#生成帳號密碼填入
+import sqlite3
+from werkzeug.security import generate_password_hash, check_password_hash
+
+def store_password(username, account, password):
+    # 生成哈希密碼
+    hashed_password = generate_password_hash(password)
+    
+    # 假設使用 SQLite 數據庫
+    conn = sqlite3.connect('app_words.db')
+    cursor = conn.cursor()
+    
+    # 將用戶名和哈希密碼插入到數據庫中
+    cursor.execute("INSERT INTO user (username, account, password) VALUES (?, ?, ?)", (username, account, hashed_password))
+    conn.commit()
+    conn.close()
+#如要執行請輸入下面這行
+#store_password('username4', 'user4', 'PappyHaha')
+
+#--------------#
+#更改密碼
+def update_password(account, new_password):
+    # 生成哈希密碼
+    hashed_password = generate_password_hash(new_password)
+    
+    # 假設使用 SQLite 數據庫
+    conn = sqlite3.connect('app_words.db')
+    cursor = conn.cursor()
+    
+    # 更新用戶的哈希密碼
+    cursor.execute("UPDATE user SET password = ? WHERE account = ?", (hashed_password, account))
+    conn.commit()
+    conn.close()
+
+#如要執行請輸入下面這行
+#update_password('account1', 'AIproject')
+
+''' 密码存储：绝对不应以明文形式存储密码。使用像 Werkzeug 这样的库来生成和验证密码哈希。
+
+from werkzeug.security import generate_password_hash
+
+password = 'PappyHaha'
+hashed_password = generate_password_hash(password)
+print(hashed_password)
+'''

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>關於我們</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        function validateForm() {
+            const account = document.getElementById('account').value;
+            const password = document.getElementById('password').value;
+            const submitButton = document.getElementById('submit-button');
+
+            if (account && password) {
+                submitButton.disabled = false;
+                submitButton.classList.add('active');
+            } else {
+                submitButton.disabled = true;
+                submitButton.classList.remove('active');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            validateForm(); // 初始檢查表單是否填寫完畢
+            document.getElementById('account').addEventListener('input', validateForm);
+            document.getElementById('password').addEventListener('input', validateForm);
+        });
+    </script>
+</head>
+
+<body>
+    <nav class="container-header">
+        <div class="header">
+            <a href="{{ url_for('index') }}">
+                <img class="logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
+            </a>
+            <nav>
+                <a href="/">我的單字書</a>
+                <a href="/about">關於我們</a>
+            </nav>
+            <div class="user">
+                {% if 'user_id' in session %}
+                <div class="user-dropdown">
+                    <img class="user-icon" src="{{ url_for('static', filename='img/user.svg') }}" alt="User Icon">
+                    <span>{{ session['account'] }}</span>
+                    <div class="dropdown-content">
+                        <a href="{{ url_for('logout') }}">登出</a>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{{ url_for('login') }}">登入</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    <div class="login-container">
+        <h1>登入</h1>
+        <form action="{{ url_for('login') }}" method="post">
+            <input type="text" id="account" name="account" placeholder="請輸入帳號" pattern="[A-Za-z0-9]*" required>
+            <input type="password" id="password" name="password" placeholder="請輸入密碼" pattern="[A-Za-z0-9]*" required>
+            <button type="submit" id="submit-button" disabled>登入</button>
+        </form>
+        {% if error %}
+        <p class="error-message-login">{{ error }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>

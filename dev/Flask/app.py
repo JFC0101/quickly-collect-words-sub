@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, jsonify
+from flask import Flask, request, render_template, redirect, url_for, jsonify, session, flash
 import sqlite3
 import google.generativeai as genai
 import os
@@ -7,9 +7,14 @@ import re
 from image_processor import process_uploaded_image
 from werkzeug.utils import secure_filename
 from image_processor_yolo5 import process_uploaded_image_yolo
-
+from flask_session import Session
+from werkzeug.security import check_password_hash
 
 app = Flask(__name__)
+
+app.config['SECRET_KEY'] = 'aiprojectsecretkey'
+app.config['SESSION_TYPE'] = 'filesystem'  # 使用文件系统存储会话数据
+Session(app)
 
 #設定圖片上傳後要存到哪個資料夾
 UPLOAD_FOLDER = 'static/uploads'
@@ -17,6 +22,52 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
+# 登入路由
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        account = request.form['account']
+        password = request.form['password']
+        
+        user = check_user_credentials(account, password)
+        if user:
+            session['user_id'] = user['id']
+            session['account'] = user['account']  #存储 account 到会话中
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid credentials')
+            return render_template('login.html', error='帳號或密碼錯誤')
+    
+    return render_template('login.html')
+
+
+
+#检查用户名和密码是否与存储的凭证匹配。
+def check_user_credentials(account, password):
+    conn = sqlite3.connect('app_words.db')
+    cursor = conn.cursor()
+
+    # 尝试获取用户信息
+    cursor.execute("SELECT user_id, account, password FROM user WHERE account = ?", (account,))
+    user_record = cursor.fetchone()
+
+    conn.close()
+
+    if user_record:
+        user_id, account, hashed_password = user_record
+        # 验证密码是否正确
+        if check_password_hash(hashed_password, password):
+            return {'id': user_id, 'account': account}
+    return None
+#----------------------#
+# 登出路由
+@app.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    session.pop('account', None)  # 清除会话中的 account
+    return redirect(url_for('login'))
+
 
 #---------------------# Gemini api 的部分
 # Set up Google Gemini API
@@ -88,7 +139,7 @@ def get_word_details(word):
 #------------------------#
 #這個 fetch_filtered_words() function 是去資料庫查找符合篩選條件資格的單字，所以 index() 或 filter() function 都有呼叫這個函數
 #原本是預計使用 fetch_all-words()，但因為做了篩選功能，所以每次抓資料庫單字時，都是依據篩選結果(start_date, end_date, difficulties)去查找單字
-def fetch_filtered_words(start_date, end_date, difficulties, user_id=1):
+def fetch_filtered_words(start_date, end_date, difficulties, user_id):
     conn = sqlite3.connect('app_words.db')
     cursor = conn.cursor()
     query = """
@@ -110,37 +161,40 @@ def fetch_filtered_words(start_date, end_date, difficulties, user_id=1):
 #当页面加载时，首先通过 html 中的 applyDefaultFilter 函數由前端送預設的篩選內容給後端，後端去找符合篩選結果的單字 (fetch_filtered_words) 包裝成 json 給前端
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+        #user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲
 
+    if 'user_id' in session:
+        user_id = session['user_id']
+                
+        #从 POST 请求的 JSON 数据中提取 startDate、endDate、difficulties 和 newWords。
+        if request.method == 'POST':
+            data = request.get_json()
+            start_date = data.get('startDate')
+            end_date = data.get('endDate')
+            difficulties = data.get('difficulties')
 
-    #从 POST 请求的 JSON 数据中提取 startDate、endDate、difficulties 和 newWords。
-    if request.method == 'POST':
-        data = request.get_json()
-        start_date = data.get('startDate')
-        end_date = data.get('endDate')
-        difficulties = data.get('difficulties')
+            filtered_words = fetch_filtered_words(start_date, end_date, difficulties, user_id)
+            response = {
+                'words': [{
+                    'word_id':word[0],
+                    'word': word[1],
+                    'pos': word[2],
+                    'pronunciation': word[3],
+                    'definition_zh': word[5],  #zh
+                    'example_en': word[8], #en
+                    'difficulty_id': word[13],
+                } for word in filtered_words]
+            }
+            return jsonify(response)
+        else:
+            start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d') + 'T00:00:00'
+            end_date = datetime.now().strftime('%Y-%m-%d') + 'T23:59:59'
+            difficulties = [1, 2, 3]
 
-        filtered_words = fetch_filtered_words(start_date, end_date, difficulties, user_id)
-        response = {
-            'words': [{
-                'word_id':word[0],
-                'word': word[1],
-                'pos': word[2],
-                'pronunciation': word[3],
-                'definition_zh': word[5],  #zh
-                'example_en': word[8], #en
-                'difficulty_id': word[13],
-            } for word in filtered_words]
-        }
-        return jsonify(response)
-    else:
-        start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d') + 'T00:00:00'
-        end_date = datetime.now().strftime('%Y-%m-%d') + 'T23:59:59'
-        difficulties = [1, 2, 3]
-
-        filtered_words = fetch_filtered_words(start_date, end_date, difficulties, user_id)
-        return render_template('index.html', words=filtered_words, start_date=start_date, end_date=end_date, difficulties=difficulties)
-
+            filtered_words = fetch_filtered_words(start_date, end_date, difficulties, user_id)
+            return render_template('index.html', words=filtered_words, start_date=start_date, end_date=end_date, difficulties=difficulties)
+    
+    return redirect(url_for('login'))
 
 
 
@@ -148,7 +202,8 @@ def index():
 # 前端页面获取用户设置的筛选条件，发送这些条件到服务器(後端)进行数据过滤，然后更新页面上的词汇列表
 @app.route('/filter', methods=['POST'])
 def filter_words():
-    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+    #user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+    user_id = session['user_id']    
 
     #从请求体中获取 JSON 数据，并提取 startDate、endDate 和 difficulties
     data = request.get_json()
@@ -186,7 +241,8 @@ def search():
     data = request.get_json()
     word_to_search = data['word'] #前端給的 word assign 給 word_to_search
 
-    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+    #user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+    user_id = session['user_id']
     
     conn = sqlite3.connect('app_words.db')
     cursor = conn.cursor()
@@ -247,7 +303,8 @@ def api_get_word_details():
 def add_word():
     data = request.get_json()
     word = data['word']
-    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+    #user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+    user_id = session['user_id']
 
     
     conn = sqlite3.connect('app_words.db')
@@ -315,7 +372,8 @@ def add_word():
 @app.route('/process_words', methods=['POST'])
 def process_words():
     words = request.json.get('words', [])
-    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+    #user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+    user_id = session['user_id']
     processed_words = []
 
     try:
@@ -323,6 +381,7 @@ def process_words():
         cursor = conn.cursor()
 
         for word_to_search in words:
+            word_to_search = word_to_search.lower()  # 将单词转换为小写
             print('word_to_search1',word_to_search)
             cursor.execute("SELECT * FROM words WHERE word=?", (word_to_search,))
             word_details = cursor.fetchone()
@@ -403,49 +462,57 @@ def upload_file():
 #將處理過的圖片， json 保存 image 路徑、selected_texts, ocr_boxes 傳給前端，並將 json 存到 session 中給 word-preview.html 使用
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
-    if request.method == 'POST':
-        #這個應該是把處理過的圖片呼叫出來
-        uploaded_file = request.files.get('file')
-        model = request.form.get('model')
-
-        if uploaded_file:
-            # 保存文件到指定目录
-            filename = secure_filename(uploaded_file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            uploaded_file.save(filepath)
-
-            # 调用process_uploaded_image函数处理上传的图片         
-            if model == 'yolo':
-                image, selected_texts, ocr_boxes, file_path  = process_uploaded_image_yolo(filepath)
-            elif model == 'ocr':
-                image, selected_texts, ocr_boxes = process_uploaded_image(filepath)
-            else:
-                return jsonify({"error": "Unknown model selected"}), 400
-
-            processed_image_path = 'processed_image.jpg'
-
-            # 返回处理后的图片和单词列表
-            return jsonify({
-                'image': processed_image_path,
-                'words': selected_texts,
-                'ocr_boxes': ocr_boxes
-            })#upload.js 接收了 json 內容就會將畫面導到 word-preview 頁面
-
-    #如果不是 post 就是單純的打開 upload 畫面
-    return render_template('upload.html')
+    if 'user_id' in session:
 
 
+        if request.method == 'POST':
+            #這個應該是把處理過的圖片呼叫出來
+            uploaded_file = request.files.get('file')
+            model = request.form.get('model')
+
+            if uploaded_file:
+                # 保存文件到指定目录
+                filename = secure_filename(uploaded_file.filename)
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                uploaded_file.save(filepath)
+
+                # 调用process_uploaded_image函数处理上传的图片         
+                if model == 'yolo':
+                    image, selected_texts, ocr_boxes, file_path  = process_uploaded_image_yolo(filepath)
+                elif model == 'ocr':
+                    image, selected_texts, ocr_boxes = process_uploaded_image(filepath)
+                else:
+                    return jsonify({"error": "Unknown model selected"}), 400
+
+                processed_image_path = 'processed_image.jpg'
+
+                # 返回处理后的图片和单词列表
+                return jsonify({
+                    'image': processed_image_path,
+                    'words': selected_texts,
+                    'ocr_boxes': ocr_boxes
+                })#upload.js 接收了 json 內容就會將畫面導到 word-preview 頁面
+
+        #如果不是 post 就是單純的打開 upload 畫面
+        return render_template('upload.html')
+
+    return redirect(url_for('login'))
 
 #進入 word-preview.html
 @app.route('/word-preview')
 def word_preview():
-    return render_template('word-preview.html')
+    if 'user_id' in session:
+        return render_template('word-preview.html')
+        
+    return redirect(url_for('login'))
+
 
 #------------------------#
 # 在 word.html 裡面點擊難易度 label 呼叫後端進行 update_difficulty() function 運行，更新難易度
 @app.route('/update_difficulty', methods=['POST'])
 def update_difficulty():
-    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+    #user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+    user_id = session['user_id']
     data = request.get_json()
     word = data.get('word')
     difficulty_id = data.get('difficulty_id')
@@ -471,33 +538,35 @@ def update_difficulty():
 # [尚未完成] 這邊應該要依據首頁當時的篩選結果來設定start_date, end_date, difficulties
 @app.route('/word')
 def word_detail():
-    word_name = request.args.get('word') #先解讀 url 上面的 word，並將 word assign 給 word_name
-    user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+    if 'user_id' in session:
+        
+        word_name = request.args.get('word') #先解讀 url 上面的 word，並將 word assign 給 word_name
+        #user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
+        user_id = session['user_id']
 
-    start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d') + 'T00:00:00'
-    end_date = datetime.now().strftime('%Y-%m-%d') + 'T23:59:59'
-    difficulties = [1, 2, 3]
+        start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d') + 'T00:00:00'
+        end_date = datetime.now().strftime('%Y-%m-%d') + 'T23:59:59'
+        difficulties = [1, 2, 3]
 
-    words = fetch_filtered_words(start_date, end_date, difficulties, user_id)  #呼叫 fetch_filtered_words 將所有符合條件的單字列出來 assign 給 words
-    word_index = next((i for i, w in enumerate(words) if w[1] == word_name), None)
-    if word_index is None:
-        return "Word not found", 404
+        words = fetch_filtered_words(start_date, end_date, difficulties, user_id)  #呼叫 fetch_filtered_words 將所有符合條件的單字列出來 assign 給 words
+        word_index = next((i for i, w in enumerate(words) if w[1] == word_name), None)
+        if word_index is None:
+            return "Word not found", 404
 
-    word = words[word_index] #words[word_index]會把第 n 個單字，這個單字的所有意思都抓出來，把這個單字都 assign 給 word
-    print(word)
-    prev_word = words[word_index - 1] if word_index > 0 else None
-    next_word = words[word_index + 1] if word_index < len(words) - 1 else None
+        word = words[word_index] #words[word_index]會把第 n 個單字，這個單字的所有意思都抓出來，把這個單字都 assign 給 word
+        print(word)
+        prev_word = words[word_index - 1] if word_index > 0 else None
+        next_word = words[word_index + 1] if word_index < len(words) - 1 else None
 
-    return render_template('word.html', word=word, prev_word=prev_word, next_word=next_word) #將單字內容、上一頁、下一頁的內容，以 jinja2 的方式傳給前端，屬於 python 與 html 一種溝通方式
+        return render_template('word.html', word=word, prev_word=prev_word, next_word=next_word) #將單字內容、上一頁、下一頁的內容，以 jinja2 的方式傳給前端，屬於 python 與 html 一種溝通方式
 
+    return redirect(url_for('login'))
 #------------------------#
 
 # Route to about page
 @app.route('/about')
 def about():
     return render_template('about.html')
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
