@@ -55,14 +55,21 @@
     </nav>
     <div class="login-container">
         <h1>登入</h1>
-        <form action="{{ url_for('login') }}" method="post">
+        <form action="/login" method="post">
             <input type="text" id="account" name="account" placeholder="請輸入帳號" pattern="[A-Za-z0-9]*" required>
-            <input type="password" id="password" name="password" placeholder="請輸入密碼" pattern="[A-Za-z0-9]*" required>
+            <input type="password" id="password"  name="password" placeholder="請輸入密碼" pattern="[A-Za-z0-9]*" required>
             <button type="submit" id="submit-button" disabled>登入</button>
         </form>
-        {% if error %}
-        <p class="error-message-login">{{ error }}</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="messages">
+          {% for category, message in messages %}
+            <div class="message {{ category }}">{{ message }}</div>
+          {% endfor %}
+          </div>
         {% endif %}
+        {% endwith %}
     </div>
-</body>
+    </body>
 </html>
+

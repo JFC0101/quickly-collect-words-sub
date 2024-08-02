@@ -1086,3 +1086,27 @@ body {
     color: #333;
     cursor: pointer;
 }
+
+
+
+/*登入頁錯誤訊息*/
+.messages {
+    margin-top: 20px;
+}
+
+.message {
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.message.success {
+    background-color: #D4EDDA;
+    color: #155724;
+}
+
+.message.error {
+    background-color: #F8D7DA;
+    color: #721C24;
+}

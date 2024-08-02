@@ -4,7 +4,7 @@ import google.generativeai as genai
 import os
 from datetime import datetime, timedelta
 import re
-from image_processor import process_uploaded_image
+from image_processor_opencv import process_uploaded_image
 from werkzeug.utils import secure_filename
 from image_processor_yolo5 import process_uploaded_image_yolo
 from flask_session import Session
@@ -36,8 +36,7 @@ def login():
             session['account'] = user['account']  #存储 account 到会话中
             return redirect(url_for('index'))
         else:
-            flash('Invalid credentials')
-            return render_template('login.html', error='帳號或密碼錯誤')
+            flash('登入失敗，請檢查帳號和密碼是否正確。', 'error')
     
     return render_template('login.html')
 
@@ -478,9 +477,9 @@ def upload():
 
                 # 调用process_uploaded_image函数处理上传的图片         
                 if model == 'yolo':
-                    image, selected_texts, ocr_boxes, file_path  = process_uploaded_image_yolo(filepath)
+                    image, selected_texts, ocr_boxes, file_path = process_uploaded_image_yolo(filepath)
                 elif model == 'ocr':
-                    image, selected_texts, ocr_boxes = process_uploaded_image(filepath)
+                    image, selected_texts, ocr_boxes, file_path = process_uploaded_image(filepath)
                 else:
                     return jsonify({"error": "Unknown model selected"}), 400
 

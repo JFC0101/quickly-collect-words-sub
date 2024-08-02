@@ -1,5 +1,5 @@
 import os
-# 加载凭证
+# 加载憑證
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'static\key (do not upload)\google-ai-class-project_api-key.json'
 
 
@@ -13,13 +13,6 @@ from PIL import ExifTags
 import re
 
 #接收上傳的文件，處理圖像，保存處理後的圖像，並返回文件路徑
-"""
-def process_uploaded_image(file):
-    processed_image, selected_texts, ocr_boxes = process_image(file)
-    save_processed_image(processed_image)
-    #print("Selected texts:", selected_texts)
-    return selected_texts, ocr_boxes
-"""
 #合併process_uploaded_image與process_image，保留process_uploaded_image名稱和process_image的內容
 def process_uploaded_image(file):
     #打開圖像文件，調整方向，並將其轉換為OpenCV可以處理的格式
@@ -43,7 +36,7 @@ def process_uploaded_image(file):
         ocr_results = ocr_results[1:]
 
     #將黃色區域的輪廓轉換為矩形框，然後合併重疊的矩形框。
-    yellow_boxes = [cv2.boundingRect(contour) for contour in contours]
+    yellow_boxes = [cv2.boundingRect(contour) for contour in reversed(contours)]
     merged_yellow_boxes = merge_yellow_boxes(yellow_boxes)
 
     #在圖像上繪製矩形框，並處理每個框內的文字    
@@ -56,10 +49,9 @@ def process_uploaded_image(file):
     selected_texts = process_selected_texts(selected_texts)
 
 #新增修正    
-    save_processed_image(image)        
+    file_path=save_processed_image(image)        
 
-    return image, selected_texts, ocr_boxes
-
+    return image, selected_texts, ocr_boxes, file_path
 
 #根據EXIF數據調整圖像的方向
 def correct_image_orientation(image):
@@ -186,7 +178,7 @@ def process_selected_texts(selected_texts):
                 seen.add(word_lower)
                 processed_texts.append(word)
     # 按字母順序排序
-    processed_texts.sort(key=str.lower)
+    #processed_texts.sort(key=str.lower)
     return processed_texts
 
 #將處理後的圖像保存為 JPEG 文件。

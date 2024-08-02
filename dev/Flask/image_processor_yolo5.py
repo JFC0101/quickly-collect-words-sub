@@ -1,4 +1,5 @@
 import os
+# 加载憑證
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'static\key (do not upload)\google-ai-class-project_api-key.json'
 
 import cv2
@@ -42,7 +43,10 @@ def process_uploaded_image_yolo(file):
             w = int(x2 - x1)
             h = int(y2 - y1)
             yellow_boxes.append((x, y, w, h))
-    
+ 
+    #依Y座標、X座標小到大的順序排列
+    yellow_boxes = sorted(yellow_boxes, key=lambda b: (b[1], b[0]))     
+ 
     #合併yellow_box矩形框
     merged_yellow_boxes = merge_yellow_boxes(yellow_boxes)
   
@@ -182,7 +186,7 @@ def process_selected_texts(selected_texts):
                 seen.add(word_lower)
                 processed_texts.append(word)
     # 按字母順序排序
-    processed_texts.sort(key=str.lower)
+    #processed_texts.sort(key=str.lower)
     return processed_texts
 
 #將處理後的圖像保存為 JPEG 文件。
