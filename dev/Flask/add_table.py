@@ -1,4 +1,4 @@
-'''新增app.py的table
+'''新增app_words.py的table
 import sqlite3
 from datetime import datetime
 import random
@@ -144,7 +144,7 @@ def delete_word_and_related_entries(word_id):
 
 
 #--------------------------#
-''' 刪除 user_words 表中相關的行
+#刪除 user_words 表中相關的行
 import sqlite3
 
 # 連接資料庫
@@ -152,17 +152,13 @@ conn = sqlite3.connect('app_words.db')
 cursor = conn.cursor()
 
 # 刪除 user_words 表中相關的行
-cursor.execute("DELETE FROM user_words WHERE user_id = ? AND word_id = ?", (1, 1))
-
+#cursor.execute("DELETE FROM user_words WHERE user_id = ? AND word_id = ?", ('Uf4426d4d424203f359d52526d9cf73fd', 8))
+cursor.execute("DROP TABLE line_user_mapping")
 # 提交更改
 conn.commit()
-
-# 打印確認信息
-print(f"Deleted user_words table entry with user_id = 1 and word_id = 1")
-
 # 關閉資料庫連接
 conn.close()
-'''
+
 #--------------#
 #生成帳號密碼填入
 import sqlite3
@@ -209,3 +205,16 @@ password = 'PappyHaha'
 hashed_password = generate_password_hash(password)
 print(hashed_password)
 '''
+
+#新增 line_uid
+
+def add_line_uid_column():
+    conn = sqlite3.connect('app_words.db')
+    cursor = conn.cursor()
+
+    cursor.execute("ALTER TABLE user ADD COLUMN line_uid TEXT")
+    conn.commit()
+    conn.close()
+
+# 呼叫此函數來新增欄位
+#add_line_uid_column()

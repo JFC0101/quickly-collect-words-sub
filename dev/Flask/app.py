@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, jsonify, session, flash
+from flask import Flask, request, render_template, redirect, url_for, jsonify, session, flash, abort
 import sqlite3
 import google.generativeai as genai
 import os
@@ -8,13 +8,26 @@ from image_processor_opencv import process_uploaded_image
 from werkzeug.utils import secure_filename
 from image_processor_yolo5 import process_uploaded_image_yolo
 from flask_session import Session
-from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
+
+
+#LINE
+from linebot import (LineBotApi, WebhookHandler)
+from linebot.exceptions import (InvalidSignatureError)
+from linebot.models import *
+
 
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'aiprojectsecretkey'
 app.config['SESSION_TYPE'] = 'filesystem'  # 使用文件系统存储会话数据
 Session(app)
+
+#LINEBOTAPI 上面的碼
+LINE_CHANNEL_ACCESS_TOKEN = 'o3QtSVE0H6Vqy2cDwyluf56pj90RY9ODCqrj1zVN0dHIhsM1fnMZG+wsVXBbhtDBj97jbI/k1wSdAvu56q/OmnQysfB94SWxZWaSaoektLmpIiFim2KvQs2axOQ4KB8j7hnBbHUfNlZzGLBA1enqFQdB04t89/1O/w1cDnyilFU=' #你的Channel access token
+LINE_CHANNEL_SECRET = '74422e40d649aee03dc6a72d2a335ee5' #你的Channel secret
+line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+handler = WebhookHandler(LINE_CHANNEL_SECRET)
 
 #設定圖片上傳後要存到哪個資料夾
 UPLOAD_FOLDER = 'static/uploads'
@@ -23,6 +36,14 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+def get_db_connection(database='app_words.db'):
+    conn = sqlite3.connect(database)
+    conn.row_factory = sqlite3.Row # row['column_name']允許您使用列名稱存取列，這可以使您的程式碼更具可讀性和可維護性。
+    return conn
+
+
+
+#-------------------#
 # 登入路由
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -67,6 +88,39 @@ def logout():
     session.pop('account', None)  # 清除会话中的 account
     return redirect(url_for('login'))
 
+
+#---------------------#
+# 註冊路由
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        account = request.form['account']
+        password = request.form['password']
+        #sername = request.form['username']
+        hashed_password = generate_password_hash(password)
+        conn = get_db_connection()
+        try:
+            conn.execute('INSERT INTO user (account, password, username) VALUES (?, ?, ?)',
+                         (account, hashed_password, account))
+            conn.commit()
+            user = conn.execute('SELECT * FROM user WHERE account = ?', (account,)).fetchone()
+            if user:
+                session['user_id'] = user['user_id']
+                session['account'] = user['account']
+                return redirect(url_for('index'))
+            else:
+                flash('註冊失敗，無法找到用戶資料。', 'error')
+                print("Failed to fetch user data after registration")
+        except sqlite3.IntegrityError:
+            # 捕捉重複帳號異常並顯示錯誤訊息
+            flash('註冊失敗：帳號已存在。', 'error')
+            print("Account already exists.")        
+        except sqlite3.Error as e:
+            flash(f'註冊失敗：{e}', 'error')
+            print(f"Error during registration: {e}")
+        finally:
+            conn.close()
+    return render_template('register.html')
 
 #---------------------# Gemini api 的部分
 # Set up Google Gemini API
@@ -476,9 +530,9 @@ def upload():
                 uploaded_file.save(filepath)
 
                 # 调用process_uploaded_image函数处理上传的图片         
-                if model == 'yolo':
+                if model == 'YOLOv5':
                     image, selected_texts, ocr_boxes, file_path = process_uploaded_image_yolo(filepath)
-                elif model == 'ocr':
+                elif model == 'openCV':
                     image, selected_texts, ocr_boxes, file_path = process_uploaded_image(filepath)
                 else:
                     return jsonify({"error": "Unknown model selected"}), 400
@@ -567,5 +621,167 @@ def word_detail():
 def about():
     return render_template('about.html')
 
-if __name__ == '__main__':
-    app.run(debug=True)
+
+
+
+#-------------------------#
+# for LINE 監聽所有來自 /callback 的 Post Request
+@app.route("/callback", methods=['POST'])
+def callback():
+    # get X-Line-Signature header value
+    signature = request.headers['X-Line-Signature']
+    # get request body as text
+    body = request.get_data(as_text=True)
+    app.logger.info("Request body: " + body)
+    # handle webhook body
+    try:
+        handler.handle(body, signature)
+    except InvalidSignatureError:
+        abort(400)
+    return 'OK'
+
+@handler.add(PostbackEvent)
+def handle_message(event):
+    print(event.postback.data)
+
+#LINE 只要收到文字訊息，發現用戶還沒綁定任何 user_id，就問 user 他的 account
+@handler.add(MessageEvent, message=TextMessage)
+def handle_text_message(event):
+    line_user_id = event.source.user_id
+    msg = str(event.message.text).strip().lower()
+    
+    conn = sqlite3.connect('app_words.db')
+    cursor = conn.cursor()
+
+    if msg.startswith("account:"):
+        account = msg.split(":", 1)[1].strip().lower()
+        cursor.execute("SELECT user_id FROM user WHERE account=?", (account,))
+        user = cursor.fetchone()
+        
+        if user:
+            user_id = user[0]
+            cursor.execute("UPDATE user SET line_uid=? WHERE user_id=?", (line_user_id, user_id))
+            conn.commit()
+            reply_text = f"已記錄您的 account：{account}"
+        else:
+            reply_text = "account: 請複製訊息於此修改成您的帳號"
+    else:
+        cursor.execute("SELECT account FROM user WHERE line_uid=?", (line_user_id,))
+        user_mapping = cursor.fetchone()
+        if user_mapping:
+            account = user_mapping[0]
+            reply_text = f"Hi {account} , 點擊下方'複習選單'複習單字吧!"
+        else:
+            reply_text = "account: 請複製訊息於此修改成您的帳號"
+    
+    conn.close()
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(reply_text))
+
+#LINE只要收到圖片就做 1.儲存圖片 2.執行process_words_fromline dunction (內含process_uploaded_image)
+@handler.add(MessageEvent, message=ImageMessage)
+def handle_image_message(event):
+    line_user_id = event.source.user_id
+    message_id = event.message.id
+    message_content = line_bot_api.get_message_content(message_id)
+    
+    if not os.path.exists('static/uploads'):
+        os.makedirs('static/uploads')
+    
+    filepath = f'static/uploads/{message_id}.jpg'
+    with open(filepath, 'wb') as fd:
+        for chunk in message_content.iter_content():
+            fd.write(chunk)
+    
+    conn = sqlite3.connect('app_words.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT user_id FROM user WHERE line_uid=?", (line_user_id,))
+    user = cursor.fetchone()
+
+    if user:
+        user_id = user[0]
+        process_words_fromline(filepath, user_id, event.reply_token)
+    else:
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("account: 請複製訊息於此修改成您的帳號"))
+
+    conn.close()
+
+
+#針對LINE新增的 function，將LINE收到的圖片進行opencv顏色辨識，將單字存入資料庫在顯示到LINE中
+def process_words_fromline(filepath, user_id, reply_token):
+    image, selected_texts, ocr_boxes, file_path = process_uploaded_image(filepath)
+    
+    conn = sqlite3.connect('app_words.db')
+    cursor = conn.cursor()
+    processed_words = []
+    error_messages = []
+
+    for word_to_search in selected_texts:
+        word_to_search = word_to_search.lower()
+        cursor.execute("SELECT * FROM words WHERE word=?", (word_to_search,))
+        word_details = cursor.fetchone()
+        
+        if word_details:
+            word_id = word_details[0]
+            cursor.execute("INSERT OR IGNORE INTO user_words (user_id, word_id, difficulty_id) VALUES (?, ?, ?)", 
+                           (user_id, word_id, 1))  # 難易度預設為1
+            conn.commit()
+            processed_words.append({
+                'word': word_details[1],
+                'pos': word_details[2],
+                'pronunciation': word_details[3],
+                'definition_zh': word_details[5]
+            })
+        else:
+            word = get_word_details(word_to_search)
+            if word:
+                cursor.execute("""
+                INSERT OR IGNORE INTO words (word, pos, pronunciation, definition_en, definition_zh, synonyms_en, synonyms_zh, example_en, example_zh, prefixes, roots, suffixes) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    word['word'], word['pos'], word['pronunciation'], word['definition_en'], word['definition_zh'], 
+                    word['synonyms_en'], word['synonyms_zh'], word['example_en'], word['example_zh'], 
+                    word['prefixes'], word['roots'], word['suffixes']
+                ))
+                conn.commit()
+                cursor.execute("SELECT word_id FROM words WHERE word=?", (word_to_search,))
+                result = cursor.fetchone()
+                if result:
+                    word_id = result[0]
+                    cursor.execute("INSERT INTO user_words (user_id, word_id, difficulty_id) VALUES (?, ?, ?)",
+                                   (user_id, word_id, 1))  # 難易度預設為1
+                    conn.commit()
+                    processed_words.append({
+                        'word': word['word'],
+                        'pos': word['pos'],
+                        'pronunciation': word['pronunciation'],
+                        'definition_zh': word['definition_zh']
+                    })
+            else:
+                error_messages.append(f"{word_to_search} 單字無法儲存")
+
+    conn.close()
+
+    if processed_words:
+        reply_text = "以下單字已新增至您的單字書"
+        for word_info in processed_words:
+            reply_text += f"\n\n{word_info['word']}\n{word_info['pronunciation']} | {word_info['pos']} \n意思: {word_info['definition_zh']}"
+    else:
+        reply_text = "沒有單字被儲存"
+
+    if error_messages:
+        reply_text += "\n" + "\n".join(error_messages)
+    
+    line_bot_api.reply_message(reply_token, TextSendMessage(reply_text))
+
+
+
+
+
+
+
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port,debug=True)

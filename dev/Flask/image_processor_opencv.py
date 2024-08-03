@@ -14,6 +14,7 @@ import re
 
 #接收上傳的文件，處理圖像，保存處理後的圖像，並返回文件路徑
 #合併process_uploaded_image與process_image，保留process_uploaded_image名稱和process_image的內容
+
 def process_uploaded_image(file):
     #打開圖像文件，調整方向，並將其轉換為OpenCV可以處理的格式
     image = Image.open(file)
@@ -190,3 +191,39 @@ def save_processed_image(image):
     with open(file_path, 'wb') as f:
         f.write(io_buf.getbuffer())
     return file_path
+
+
+'''#儲存單存 opencv 的綠色框部分
+def process_uploaded_image(file):
+    # 打開圖像文件，調整方向，並將其轉換為OpenCV可以處理的格式
+    image = Image.open(file)
+    image = correct_image_orientation(image)
+    image = np.array(image)    
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)  # 注意：PIL打開的圖片是RGB格式，需轉換為BGR格式以符合OpenCV的格式
+    
+    # 將圖像轉換為HSV顏色空間，然後創建一個黃色的遮罩，並找出黃色區域的輪廓
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    lower_yellow = np.array([25, 60, 100])
+    upper_yellow = np.array([40, 255, 255])
+    mask = cv2.inRange(hsv_image, lower_yellow, upper_yellow)
+    contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+   
+    # 將黃色區域的輪廓轉換為矩形框，然後合併重疊的矩形框。
+    yellow_boxes = [cv2.boundingRect(contour) for contour in reversed(contours)]
+    merged_yellow_boxes = merge_yellow_boxes(yellow_boxes)
+
+    # 在圖像上繪製矩形框，並處理每個框內的文字    
+    for box in merged_yellow_boxes:
+        x, y, w, h = box
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
+
+    # 保存處理後的圖像
+    output_path = 'static/uploads/Mountain_processed.jpg'
+    cv2.imwrite(output_path, image)
+    print(f"Processed image saved to {output_path}")
+
+if __name__ == "__main__":
+    image_path = 'static/uploads/Mountain.jpg'
+    process_uploaded_image(image_path)
+
+    '''
