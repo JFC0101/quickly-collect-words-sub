@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Upload</title>
     <style>
+        .container {
+            display: flex;
+            gap: 20px;
+        }
         #image-container {
             width: 800px;
             height: 600px;
@@ -32,20 +36,20 @@
         <input type="file" name="file">
         <input type="submit" value="Upload">
     </form>
-    <div id="image-container">
-        <span id="placeholder">上傳檔案後顯示</span>
-        <img id="image" src="" alt="Processed Image">
+    <div class="container">
+        <div id="image-container">
+            <span id="placeholder">上傳檔案後顯示</span>
+            <img id="image" src="" alt="Processed Image">
+        </div>
     </div>
     <br>
     <input type="range" id="zoom-range" min="0.5" max="2.5" step="0.1" value="1">
     <label for="zoom-range">Zoom</label>
-
     <script>
         document.getElementById('zoom-range').addEventListener('input', function() {
             const image = document.getElementById('image');
             image.style.transform = `scale(${this.value})`;
         });
-
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const imageUrl = urlParams.get('image_url');
@@ -56,16 +60,12 @@
                     const containerHeight = 600;
                     const imageWidth = image.naturalWidth;
                     const imageHeight = image.naturalHeight;
-
                     const widthRatio = containerWidth / imageWidth;
                     const heightRatio = containerHeight / imageHeight;
                     const bestRatio = Math.min(widthRatio, heightRatio);
-
                     image.style.transform = `scale(${bestRatio})`;
                     image.style.display = 'block';
                     document.getElementById('placeholder').style.display = 'none';
-
-                    // Set the zoom slider to the calculated ratio
                     document.getElementById('zoom-range').value = bestRatio;
                 };
                 image.src = imageUrl;
