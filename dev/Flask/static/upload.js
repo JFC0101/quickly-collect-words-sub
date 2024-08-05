@@ -7,20 +7,33 @@ document.addEventListener("DOMContentLoaded", function() {
     const fileName = document.getElementById('file-name');
     const video = document.getElementById('webcam');
     const modelSelect = document.querySelector('.user-options');
+    const webcamSection = document.getElementById('desktop-webcam-section');
+    const divider = document.getElementById('desktop-divider');
 
+    // Function to check if the device is mobile
+    function isMobileDevice() {
+        return window.innerWidth <= 767; // Change this value as needed
+    }
 
-    // Initialize webcam
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function(stream) {
-                video.srcObject = stream; //將攝像頭的視頻流設置為 <video> 元素的來源
-                video.play(); // 確保視頻播放
-            })
-            .catch(function(error) {
-                console.error("Error accessing webcam: " + error);
-            });
+    // Hide webcam section on mobile devices
+    if (isMobileDevice()) {
+        webcamSection.style.display = 'none';
+        divider.style.display = 'none';
     } else {
-        console.error("getUserMedia not supported on your browser!");
+        // Initialize webcam only if the device is not mobile
+        const video = document.getElementById('webcam');
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    video.srcObject = stream; //將攝像頭的視頻流設置為 <video> 元素的來源
+                    video.play(); // 確保視頻播放
+                })
+                .catch(function(error) {
+                    console.error("Error accessing webcam: " + error);
+                });
+        } else {
+            console.error("getUserMedia not supported on your browser!");
+        }
     }
 
     //當文件選取改變時 (fileUpload.onchange)，更新 fileName 元素的文本內容。
@@ -31,16 +44,13 @@ document.addEventListener("DOMContentLoaded", function() {
             fileName.textContent = "未選取任何檔案";
         }
     };
-    // 國桐新增部分
+
     function getSelectedModel() {
         return modelSelect.value;
     }
 
-
-
     //捕捉webcam畫面和呼叫執行上傳圖像的function
     function captureAndUpload() {
-        const video = document.getElementById('webcam');
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
 
@@ -154,7 +164,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    
     window.captureAndUpload = captureAndUpload;
     window.uploadFile = uploadFile;
 });

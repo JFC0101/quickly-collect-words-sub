@@ -35,7 +35,7 @@
             <a href="{{ url_for('index') }}">
                 <img class="logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
             </a>
-            <nav>
+            <nav class="main-nav">
                 <a href="/">我的單字書</a>
                 <a href="/about">關於我們</a>
             </nav>
@@ -52,8 +52,43 @@
                 <a href="{{ url_for('login') }}">登入</a>
                 {% endif %}
             </div>
+            <div class="menu-icon" id="menu-icon">
+                <img src="{{ url_for('static', filename='img/menu.svg') }}" alt="Menu Icon">
+            </div>
+            <div class="mobile-nav" id="mobile-nav">
+                {% if 'user_id' in session %}
+                <div class="user-mobile">
+                    <img class="user-icon" src="{{ url_for('static', filename='img/user.svg') }}" alt="User Icon">
+                    <span>{{ session['account'] }}</span>
+                </div>
+                {% endif %}
+                <a href="/">我的單字書</a>
+                <a href="/about">關於我們</a>
+                {% if 'user_id' in session %}
+                <a href="{{ url_for('logout') }}">登出</a>
+                {% else %}
+                <a href="{{ url_for('login') }}">登入</a>
+                {% endif %}
+            </div>
         </div>
     </nav>
+    <script>
+        document.getElementById('menu-icon').addEventListener('click', function(event) {
+            event.stopPropagation();
+            document.getElementById('mobile-nav').classList.toggle('active');
+        });
+
+        document.addEventListener('click', function(event) {
+            var isClickInside = document.getElementById('mobile-nav').contains(event.target);
+            var isMenuIcon = document.getElementById('menu-icon').contains(event.target);
+
+            if (!isClickInside && !isMenuIcon) {
+                document.getElementById('mobile-nav').classList.remove('active');
+            }
+        });
+    </script>
+
+    
     <div class="login-container">
         <h1>註冊</h1>
         <form action="/register" method="post">

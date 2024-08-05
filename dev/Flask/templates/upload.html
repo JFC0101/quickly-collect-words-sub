@@ -14,7 +14,7 @@
             <a href="{{ url_for('index') }}">
                 <img class="logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo">
             </a>
-            <nav>
+            <nav class="main-nav">
                 <a href="/">我的單字書</a>
                 <a href="/about">關於我們</a>
             </nav>
@@ -32,13 +32,46 @@
                 {% endif %}
 
                 <select class="user-options">
-                    <option value="openCV">openCV</option>
+                    <option value="openCV">OpenCV</option>
                     <option value="YOLOv5">YOLOv5</option>
                 </select>
 
             </div>
+            <div class="menu-icon" id="menu-icon">
+                <img src="{{ url_for('static', filename='img/menu.svg') }}" alt="Menu Icon">
+            </div>
+            <div class="mobile-nav" id="mobile-nav">
+                {% if 'user_id' in session %}
+                <div class="user-mobile">
+                    <img class="user-icon" src="{{ url_for('static', filename='img/user.svg') }}" alt="User Icon">
+                    <span>{{ session['account'] }}</span>
+                </div>
+                {% endif %}
+                <a href="/">我的單字書</a>
+                <a href="/about">關於我們</a>
+                {% if 'user_id' in session %}
+                <a href="{{ url_for('logout') }}">登出</a>
+                {% else %}
+                <a href="{{ url_for('login') }}">登入</a>
+                {% endif %}
+            </div>
         </div>
-    </nav>   
+    </nav>
+    <script>
+        document.getElementById('menu-icon').addEventListener('click', function(event) {
+            event.stopPropagation();
+            document.getElementById('mobile-nav').classList.toggle('active');
+        });
+
+        document.addEventListener('click', function(event) {
+            var isClickInside = document.getElementById('mobile-nav').contains(event.target);
+            var isMenuIcon = document.getElementById('menu-icon').contains(event.target);
+
+            if (!isClickInside && !isMenuIcon) {
+                document.getElementById('mobile-nav').classList.remove('active');
+            }
+        });
+    </script>
 
     <!-- Loading Spinner -->
     <div id="loadingSpinner" class="loading-spinner" style="display: none;">
@@ -52,28 +85,29 @@
         </div>
         
         <div class="upload-section">        
-            <div class="main-content">
+            <div class="main-content" id="desktop-webcam-section">
                 <div class="webcam-section">
                     <video id="webcam" autoplay></video>
                 </div>
                 <div class="upload-section">
-                    
                     <button onclick="captureAndUpload()" class="button-big">截取上傳</button>
                     
-                    <div class="divider">
-                        <span> ————— &emsp; 或選擇照片上傳 &emsp;—————</span>
-                    </div>
-                    <div>
-                        <label for="file-upload" class="custom-file-upload">選擇圖片</label>
-                        <input id="file-upload" name="file" type="file" accept="image/*">
-                        <span id="file-name">未選取任何檔案</span>
-                        <button onclick="uploadFile()" class="button">上傳</button>
-                    </div>
                 </div>
             </div>
+            <div class="divider" id="desktop-divider">
+                <span> ————— &emsp; 或選擇照片上傳 &emsp;—————</span>
+            </div>
+        
+            <div class="upload-pic-section">
+                <div class="upload-row">
+                    <label for="file-upload" class="custom-file-upload">選擇圖片</label>
+                    <input id="file-upload" name="file" type="file" accept="image/*">
+                    <span id="file-name">未選取任何檔案</span>
+                    <button onclick="uploadFile()" class="button upload-button">上傳</button>
+                </div>
+            </div>
+    
         </div>
     </div>
-   
-
 </body>
 </html>

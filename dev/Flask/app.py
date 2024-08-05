@@ -9,6 +9,7 @@ from werkzeug.utils import secure_filename
 from image_processor_yolo5 import process_uploaded_image_yolo
 from flask_session import Session
 from werkzeug.security import generate_password_hash, check_password_hash
+from linebot_message_handlers_module import handle_option_1, handle_option_2, show_menu
 
 
 #LINE
@@ -94,7 +95,7 @@ def logout():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        account = request.form['account']
+        account = request.form['account'].lower()        
         password = request.form['password']
         #sername = request.form['username']
         hashed_password = generate_password_hash(password)
@@ -138,7 +139,7 @@ generation_config = {
 
 # 只要呼叫這個 Function，就是去問 Gemini API 單字_details
 def get_word_details(word):
-    system_instruction = f'Input: {word}\nExample Output:\n\nword: explore\npos: verb\npronunciation: KK [ɪkˈsplɔːr]\ndefinition_zh: 探測, 勘查, 探索, 研究\ndefinition_en: to search a place and discover things about it; to examine or discuss a subject in detail.\nsynonyms_en: investigate, examine, inquire into, inspect, look into, probe, research\nsynonyms_zh: 調查, 研究, 查明, 檢查, 探討, 探究, 審查\nexample_en: The explorers set out to explore the unknown territory.\nexample_zh: 探索者們出發去探索未知的領土。\nprefixes: ex- / out, from 向外\nroot: plore / to search 探索\nsuffixes: \n (All zh places use traditional Chinese description.) '
+    system_instruction = f'Input: {word}(original form of word)\nExample Output:\n\nword: explore\npos: verb\npronunciation: KK [ɪkˈsplɔːr]\ndefinition_zh: 探測, 勘查, 探索, 研究\ndefinition_en: to search a place and discover things about it; to examine or discuss a subject in detail.\nsynonyms_en: investigate, examine, inquire into, inspect, look into, probe, research\nsynonyms_zh: 調查, 研究, 查明, 檢查, 探討, 探究, 審查\nexample_en: The explorers set out to explore the unknown territory.\nexample_zh: 探索者們出發去探索未知的領土。\nprefixes: ex- / out, from 向外\nroot: plore / to search 探索\nsuffixes: \n (All zh places use traditional Chinese description.) '
     
     model = genai.GenerativeModel(
         model_name="gemini-1.5-flash",
@@ -202,7 +203,7 @@ def fetch_filtered_words(start_date, end_date, difficulties, user_id):
     WHERE uw.create_time BETWEEN ? AND ? 
     AND uw.difficulty_id IN ({seq})
     AND uw.user_id = ?
-    ORDER BY uw.word_id DESC
+    ORDER BY uw.create_time DESC
     """.format(seq=','.join(['?']*len(difficulties)))
     cursor.execute(query, (start_date, end_date, *difficulties, user_id))
     words = cursor.fetchall()
@@ -292,7 +293,7 @@ def filter_words():
 @app.route('/search', methods=['POST'])
 def search():
     data = request.get_json()
-    word_to_search = data['word'] #前端給的 word assign 給 word_to_search
+    word_to_search = data['word'].lower() #前端給的 word assign 給 word_to_search
 
     #user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
     user_id = session['user_id']
@@ -653,26 +654,34 @@ def handle_text_message(event):
     conn = sqlite3.connect('app_words.db')
     cursor = conn.cursor()
 
-    if msg.startswith("account:"):
-        account = msg.split(":", 1)[1].strip().lower()
-        cursor.execute("SELECT user_id FROM user WHERE account=?", (account,))
-        user = cursor.fetchone()
-        
-        if user:
-            user_id = user[0]
-            cursor.execute("UPDATE user SET line_uid=? WHERE user_id=?", (line_user_id, user_id))
-            conn.commit()
-            reply_text = f"已記錄您的 account：{account}"
+    cursor.execute("SELECT user_id, account FROM user WHERE line_uid=?", (line_user_id,))
+    user = cursor.fetchone()
+    difficulty_id = 1  # 暫時固定測試
+
+    if user:
+        user_id, account = user
+        if msg == "隨選難字":
+            handle_option_1(line_bot_api, event, user_id, difficulty_id)
+        elif msg == "隨選短文":
+            handle_option_2(line_bot_api, event, user_id, difficulty_id)
         else:
-            reply_text = "account: 請複製訊息於此修改成您的帳號"
+            #reply_text = f"Hi {account} , 點擊下方'複習選單'功能，或傳送圖片新增單字"
+            show_menu(line_bot_api, event)
     else:
-        cursor.execute("SELECT account FROM user WHERE line_uid=?", (line_user_id,))
-        user_mapping = cursor.fetchone()
-        if user_mapping:
-            account = user_mapping[0]
-            reply_text = f"Hi {account} , 點擊下方'複習選單'複習單字吧!"
+        if msg.startswith("account:"):
+            account = msg.split(":", 1)[1].strip().lower()
+            cursor.execute("SELECT user_id FROM user WHERE lower(account)=?", (account,))
+            user = cursor.fetchone()
+            
+            if user:
+                user_id = user[0]
+                cursor.execute("UPDATE user SET line_uid=? WHERE user_id=?", (line_user_id, user_id))
+                conn.commit()
+                reply_text = f"已記錄您的 account：{account}"
+            else:
+                reply_text = "帳號不存在，請重新輸入或註冊新帳號。"
         else:
-            reply_text = "account: 請複製訊息於此修改成您的帳號"
+            reply_text = "您尚未綁定帳號唷!\n請輸入「account: __ (填入帳號)」"
     
     conn.close()
     line_bot_api.reply_message(event.reply_token, TextSendMessage(reply_text))
@@ -702,7 +711,7 @@ def handle_image_message(event):
         user_id = user[0]
         process_words_fromline(filepath, user_id, event.reply_token)
     else:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage("account: 請複製訊息於此修改成您的帳號"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("帳號: ___/n 送出範例「帳號: account1」"))
 
     conn.close()
 

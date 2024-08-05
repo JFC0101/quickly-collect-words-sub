@@ -6,19 +6,6 @@ body {
     padding: 0;
 }
 
-.container {
-    max-width: 90%;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    padding: 0 15px; /* Add padding for smaller screens */
-}
-
-
-
-
 
 .error-message {
     color: #FB3A1F;
@@ -26,39 +13,187 @@ body {
     font-size: 12px;
 }
 
+.container {
+    max-width: 90%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    padding: 82px 0px 0 0 ; /* Add padding for smaller screens */
+}
+
+
 .container-header {
     width: 100%;
     margin: 0 auto;
     align-items: center;
     padding: 0;
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    background-color: white;
 }
 
 .header {
-    width: 100%;
     height: 82px;
     background: white;
     backdrop-filter: blur(80px);
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: center;
-    padding: 0 0px ; /* 調整 padding 值來增加空間 */
+    padding: 0 64px; /* Adjust padding for smaller screens */
+    z-index: 1000;
+}
+
+
+.logo {
+    width: 50px;
+    height: 50px;
+    border-radius: 9999px;
 }
 
 
 
-.header nav {
+/* 下拉選單樣式 */
+.user-options {
+    margin-left: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+}
+
+
+
+.main-nav {
     display: flex;
     gap: 36px;
 }
 
-.header nav a {
+.main-nav a {
     text-align: center;
     color: black;
     font-size: 14px;
     font-family: 'Noto Sans TC';
     opacity: 0.80;
 }
+
+.user {
+    display: flex;
+    align-items: center;
+
+}
+
+.user a {
+    text-align: center;
+    color: black;
+    font-size: 14px;
+    font-family: 'Noto Sans TC';
+    opacity: 0.80;
+}
+
+
+.user-dropdown {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 8px 0;
+    gap: 4px;
+}
+
+.user-dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #ffffff;
+    min-width: 120px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    right: -24px;
+    top: 36px;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: #f1f1f1;
+}
+
+.menu-icon {
+    display: none;
+    cursor: pointer;
+}
+
+.mobile-nav {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    top: 82px;
+    right: 0;
+    background: white;
+    width: 100%;
+    text-align: center;
+    padding: 15px 0;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    z-index: 1001; /* Ensure the mobile nav is on top */
+    
+}
+
+.mobile-nav.active {
+    display: flex;
+    
+}
+
+.mobile-nav a, .user-mobile {
+    color: black;
+    padding: 12px 0;
+    text-decoration: none;
+    display: block;
+    font-size: 16px;
+    font-family: 'Noto Sans TC';
+}
+
+.user-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.user-icon {
+    width: 24px;
+    height: 24px;
+}
+
+@media screen and (max-width: 768px) {
+    .menu-icon {
+        display: block;
+    }
+
+    .main-nav, .user {
+        display: none;
+    }
+
+    .header{
+        padding: 0 24px; /* Adjust padding for smaller screens */
+    }
+}
+
+
 
 
 
@@ -79,59 +214,75 @@ h2 {
 
 
 /* Search bar styles */
+.search-bar-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center the content horizontally */
+    margin-bottom: 20px;
+}
+
+.search-bar-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 800px; /* Maximum width for the form */
+}
+
 .search-bar {
     display: flex;
     align-items: center;
-    margin-bottom: 8px;
-    width: 100%; /* Ensure it takes full width */
+    justify-content: center;
+    width: 60%;
+    margin-bottom: 10px; /* Space between first and second row */
 }
 
 /* Input field styles */
 .search-bar input[type="text"] {
-    width: 100%; /* Make input take full width on smaller screens */
-    max-width: 400px; /* Maximum width for larger screens */
-    padding: 10px;
+    flex: 1;
+    padding: 10px 64px 10px 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    margin-bottom: 10px; /* Spacing between input and buttons */
+    margin-right: 10px;
+    font-size: 14px;
 }
-
 
 
 
 /* Responsive styles */
 @media (min-width: 768px) {
+    .search-bar-form {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: center; /* Center the form */
+    }
+    
     .search-bar {
-        flex-direction: row; /* Align input and buttons horizontally on larger screens */
-        width: 600px;
+        margin-bottom: 0;
     }
     
     .search-bar input[type="text"] {
-        width: 300px; /* Reset width on larger screens */
-        margin-right: 10px; /* Space between input and buttons */
+        margin-bottom: 0;
     }
     
-    .search-bar .main-button {
-        margin: 0 8px; /* Adjust margins for larger screens */
+    .button {
+        margin-bottom: 0;
+        margin-left: 10px; /* Space between buttons */
     }
 }
 
 @media (max-width: 767px) {
-    .search-bar {
-        flex-direction: column; /* Stack input and buttons vertically on small screens */
-    }
-    
-    .search-bar input[type="text"] {
-        width: 100%; /* Full width on smaller screens */
+    .search-bar input[type="text"], .button {
+        /*width: 100%; /* Full width on smaller screens */
         max-width: 100%; /* Remove max-width on small screens */
     }
     
-    .search-bar .main-button {
-        width: 100%; /* Full width on smaller screens */
-        margin-bottom: 10px; /* Space between buttons */
+    .search-bar, .button {
+        margin-bottom: 10px; /* Space between rows and buttons */
+        width: 100%;
     }
 }
-
 
 
 
@@ -147,7 +298,7 @@ h2 {
 
 
 .word-list {
-    max-width: 1118px;
+    max-width: 1119px;
     display: inline-flex;
     flex-direction: column;
     justify-content: center; /* This centers the content inside the team-list if there's any */
@@ -237,14 +388,19 @@ h2 {
     /*flex: 1;*/
 }
 
+
+
 /* .main-content 的样式 */
 .main-content {
     display: flex;
     flex-direction: column; /* 在小屏幕上垂直排列 */
     gap: 20px;
-    width: 100%; /* 确保内容占满父容器的宽度 */
+    width: 80%; /* 确保内容占满父容器的宽度 */
     margin-top: 40px; /* 减少顶部间距 */
 }
+
+
+
 
 /* .webcam-section 的样式 */
 .webcam-section {
@@ -260,6 +416,58 @@ h2 {
     border-radius: 8px;
 }
 
+
+.custom-file-upload {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 1px #1484FF solid;
+    cursor: pointer;
+    color: #1484FF;
+    font-size: 16px;
+    margin-right: 10px; /* Space between button and file name */
+}
+
+.upload-pic-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 540px;
+    margin-top: 20px;
+}
+
+.upload-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 10px; /* Space between rows */
+}
+
+.upload-button {
+    width: 100%;
+    max-width: 80px; /* Set a maximum width for the button */
+}
+
+
+@media (min-width: 768px) {
+    .upload-pic-section {
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .upload-row {
+        margin-bottom: 0;
+        
+    }
+
+    .upload-button {
+        margin-left: 10px; /* Space between file name and upload button */
+        width: 100%; /* Remove max-width for larger screens */
+    }
+}
+
 /* 按钮样式 */
 .button {
     padding: 10px 24px;
@@ -268,14 +476,14 @@ h2 {
     color: white;
     border-radius: 4px;
     cursor: pointer;
-    margin: 0 5px 0 0; /* Reduced margin for better spacing */
+    margin: 0 5px; /* Reduced margin for better spacing */
     text-align: center; /* 文字居中對齊 */
+    font-size: 14px; /* Default font size for buttons */
 }
 
 .button:hover {
     background-color: #0056b3;
 }
-
 
 
 
@@ -303,6 +511,8 @@ h2 {
     border-radius: 4px;
     cursor: pointer;
     text-align: center; /* 文字居中對齊 */
+    font-size: 14px; /* Default font size for buttons */
+    min-width:84px;
 }
 
 .button-cancel:hover {
@@ -318,6 +528,7 @@ h2 {
     cursor: pointer;
     color: #1484FF;
     font-size: 16px;
+    min-width: 64px;
 }
 
 
@@ -409,6 +620,7 @@ h2 {
 .word-detail {
     max-width: 600px;
     padding: 24px;
+    margin-bottom: 120px;
     background: white;
     border: 0.4px solid #85D3FF;
     border-radius: 8px;
@@ -441,21 +653,21 @@ h2 {
 /* 对于大屏幕（桌面设备） */
 @media (min-width: 1024px) {
     .back {
-        width: 560px; /* 在大屏幕上将宽度设置为600px */
+        width: 640px; /* 在大屏幕上将宽度设置为600px */
     }
 }
 
 /* 对于中等屏幕（平板设备） */
 @media (min-width: 768px) and (max-width: 1023px) {
     .back {
-        width: 64%; /* 在中等屏幕上将宽度设置为80% */
+        width: 80%; /* 在中等屏幕上将宽度设置为80% */
     }
 }
 
 /* 对于小屏幕（手机设备） */
 @media (max-width: 767px) {
     .back {
-        width: 80%; /* 在小屏幕上将宽度设置为100% */
+        width: 100%; /* 在小屏幕上将宽度设置为100% */
     }
 }
 
@@ -516,12 +728,7 @@ button:active {
 
 
 
-/* 全局样式 */
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-}
+
 
 
 
@@ -771,6 +978,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: flex-end;
+    
 }
 
 .filter-button {
@@ -829,6 +1037,7 @@ body {
     height: 100%;
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.4); /* 半透明背景 */
+    padding: 82px 0px 0 0 ; /* Add padding for smaller screens */
 }
 
 .modal-content {
@@ -900,6 +1109,7 @@ body {
     display: flex;
     justify-content: space-between;
     margin: 20px 0;
+    
 }
 
 .filter-options-date input {
@@ -911,6 +1121,7 @@ body {
     padding: 10px; /* 內邊距10像素 */
     margin: 0 5px; /* 左右邊距5像素 */
     font-size: 14px;
+    background-color: #FFF;
 }
 
 .filter-options-date label {
@@ -1012,74 +1223,7 @@ body {
 }
 
 
-.user-dropdown {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    cursor: pointer;
-    padding: 8px 0;
 
-}
-.logo {
-    width: 50px;
-    height: 50px;
-    border-radius: 9999px;
-}
-
-.header .user {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.header .user a {
-    text-decoration: none;
-    color: #148ff1;
-    font-weight: bold;
-}
-.user-icon {
-    width: 24px;
-    height: 24px;
-    margin-right: 10px;
-}
-
-.dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: #ffffff;
-    min-width: 160px;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    z-index: 1;
-    right: -64px;
-    top: 36px;
-}
-
-.dropdown-content a {
-    color: black;
-    padding: 12px 16px;
-    text-decoration: none;
-    display: block;
-}
-
-.dropdown-content a:hover {
-    background-color: #f1f1f1;
-}
-
-.user-dropdown:hover .dropdown-content {
-    display: block;
-}
-
-/* 下拉選單樣式 */
-.user-options {
-    margin-left: 10px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 14px;
-    background-color: #fff;
-    color: #333;
-    cursor: pointer;
-}
 
 
 

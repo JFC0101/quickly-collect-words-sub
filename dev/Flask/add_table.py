@@ -151,9 +151,9 @@ import sqlite3
 conn = sqlite3.connect('app_words.db')
 cursor = conn.cursor()
 
-# 刪除 user_words 表中相關的行
-#cursor.execute("DELETE FROM user_words WHERE user_id = ? AND word_id = ?", ('Uf4426d4d424203f359d52526d9cf73fd', 8))
-cursor.execute("DROP TABLE line_user_mapping")
+# 執行要打開  刪除 user_words 表中相關的行
+#cursor.execute("DELETE FROM user_words WHERE user_id = ? AND word_id = ?", ('6', 13))
+
 # 提交更改
 conn.commit()
 # 關閉資料庫連接
@@ -218,3 +218,16 @@ def add_line_uid_column():
 
 # 呼叫此函數來新增欄位
 #add_line_uid_column()
+
+
+
+import sqlite3
+
+conn = sqlite3.connect('app_words.db')
+cursor = conn.cursor()
+
+# 執行要打開
+#cursor.execute("UPDATE user SET account =?, username=? WHERE user_id = ?", ('banana','banana',8))
+
+conn.commit()
+conn.close()
