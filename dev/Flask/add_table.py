@@ -139,7 +139,7 @@ def delete_word_and_related_entries(word_id):
             conn.close()
 
 # 刪除 word_id = 3 的行
-#delete_word_and_related_entries(4)
+#delete_word_and_related_entries(57)
 
 
 
@@ -205,29 +205,3 @@ password = 'PappyHaha'
 hashed_password = generate_password_hash(password)
 print(hashed_password)
 '''
-
-#新增 line_uid
-
-def add_line_uid_column():
-    conn = sqlite3.connect('app_words.db')
-    cursor = conn.cursor()
-
-    cursor.execute("ALTER TABLE user ADD COLUMN line_uid TEXT")
-    conn.commit()
-    conn.close()
-
-# 呼叫此函數來新增欄位
-#add_line_uid_column()
-
-
-
-import sqlite3
-
-conn = sqlite3.connect('app_words.db')
-cursor = conn.cursor()
-
-# 執行要打開
-#cursor.execute("UPDATE user SET account =?, username=? WHERE user_id = ?", ('banana','banana',8))
-
-conn.commit()
-conn.close()

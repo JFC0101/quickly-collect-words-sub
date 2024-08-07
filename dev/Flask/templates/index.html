@@ -311,7 +311,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const wordForm = document.getElementById('word-form');
             const errorMessage = document.getElementById('error-message');
-            const regex = /^[A-Za-z,]+$/;
+            const regex = /^[A-Za-z]+$/;
 
             wordForm.addEventListener('submit', function(event) {
                 event.preventDefault(); // Always prevent default form submission

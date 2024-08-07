@@ -6,7 +6,6 @@
     <title>Word Detail</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 </head>
 <body>
     <nav class="container-header">
@@ -67,12 +66,10 @@
         });
     </script>
 
-
     <div class="container">
         <div class="back">
                 <a href="/">＜ 回到單字書</a>
         </div>
-        
 
         <div class="word-detail">
             <h1>{{ word[1] }}</h1>
@@ -86,8 +83,7 @@
             <p>字首：{{ word[10] }}</p>
             <p>字根：{{ word[11] }}</p>
 
-
-            <div class = "hori-line"></div>
+            <div class="hori-line"></div>
 
             <div class="difficulty-radio">
                 <label>
@@ -103,7 +99,6 @@
                     <span class="difficulty" data-difficulty="3">簡單（已記住的）</span>
                 </label>
             </div>
-    
         </div>
         <div class="navigation buttons">
             {% if prev_word %}
@@ -115,7 +110,6 @@
             {% endif %}
         </div>
     </div>
-
 
     <script>
         function bindDifficultyClick() {
@@ -134,7 +128,7 @@
             $.ajax({
                 type: 'POST',
                 url: '/update_difficulty',
-                data: JSON.stringify({'word': word, 'difficulty_id': difficulty_id}), 
+                data: JSON.stringify({'word': word, 'difficulty_id': difficulty_id}),
                 contentType: 'application/json',
                 success: function(response) {
                     console.log('難易度已更新');

@@ -1,8 +1,3 @@
-import os
-# 加载憑證
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'static\key (do not upload)\google-ai-class-project_api-key.json'
-
-
 import cv2
 import numpy as np
 from PIL import Image

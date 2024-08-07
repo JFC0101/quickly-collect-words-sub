@@ -2,6 +2,7 @@ from flask import Flask, request, render_template, redirect, url_for, jsonify, s
 import sqlite3
 import google.generativeai as genai
 import os
+from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import re
 from image_processor_opencv import process_uploaded_image
@@ -17,6 +18,8 @@ from linebot import (LineBotApi, WebhookHandler)
 from linebot.exceptions import (InvalidSignatureError)
 from linebot.models import *
 
+# 載入 .env 文件中的環境變數
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -25,10 +28,16 @@ app.config['SESSION_TYPE'] = 'filesystem'  # 使用文件系统存储会话数�
 Session(app)
 
 #LINEBOTAPI 上面的碼
-LINE_CHANNEL_ACCESS_TOKEN = 'o3QtSVE0H6Vqy2cDwyluf56pj90RY9ODCqrj1zVN0dHIhsM1fnMZG+wsVXBbhtDBj97jbI/k1wSdAvu56q/OmnQysfB94SWxZWaSaoektLmpIiFim2KvQs2axOQ4KB8j7hnBbHUfNlZzGLBA1enqFQdB04t89/1O/w1cDnyilFU=' #你的Channel access token
-LINE_CHANNEL_SECRET = '74422e40d649aee03dc6a72d2a335ee5' #你的Channel secret
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv('LINE_CHANNEL_ACCESS_TOKEN')
+LINE_CHANNEL_SECRET = os.getenv('LINE_CHANNEL_SECRET')
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
+
+#google key的json位置
+google_application_credentials = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+
+
+
 
 #設定圖片上傳後要存到哪個資料夾
 UPLOAD_FOLDER = 'static/uploads'
@@ -125,7 +134,7 @@ def register():
 
 #---------------------# Gemini api 的部分
 # Set up Google Gemini API
-api_key = os.getenv('API_KEY')
+api_key = os.getenv('GEMINI_API_KEY')
 genai.configure(api_key=api_key)
 
 # Define generation configuration
