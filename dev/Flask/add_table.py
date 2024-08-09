@@ -139,12 +139,13 @@ def delete_word_and_related_entries(word_id):
             conn.close()
 
 # 刪除 word_id = 3 的行
-#delete_word_and_related_entries(57)
+delete_word_and_related_entries(107)
 
 
 
 #--------------------------#
 #刪除 user_words 表中相關的行
+
 import sqlite3
 
 # 連接資料庫
@@ -152,12 +153,14 @@ conn = sqlite3.connect('app_words.db')
 cursor = conn.cursor()
 
 # 執行要打開  刪除 user_words 表中相關的行
-#cursor.execute("DELETE FROM user_words WHERE user_id = ? AND word_id = ?", ('6', 13))
+#cursor.execute("DELETE FROM user_words WHERE user_id = ? AND word_id = ?", ('6', 107))
 
 # 提交更改
 conn.commit()
 # 關閉資料庫連接
 conn.close()
+
+
 
 #--------------#
 #生成帳號密碼填入
@@ -205,3 +208,4 @@ password = 'PappyHaha'
 hashed_password = generate_password_hash(password)
 print(hashed_password)
 '''
+

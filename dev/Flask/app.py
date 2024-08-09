@@ -23,8 +23,8 @@ load_dotenv()
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = 'aiprojectsecretkey'
-app.config['SESSION_TYPE'] = 'filesystem'  # 使用文件系统存储会话数据
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.config['SESSION_TYPE'] = os.getenv('SESSION_TYPE')
 Session(app)
 
 #LINEBOTAPI 上面的碼
@@ -435,7 +435,6 @@ def add_word():
 @app.route('/process_words', methods=['POST'])
 def process_words():
     words = request.json.get('words', [])
-    #user_id = 1  # 假設用戶ID為1，可以根據實際情況動態獲取
     user_id = session['user_id']
     processed_words = []
 
@@ -445,23 +444,23 @@ def process_words():
 
         for word_to_search in words:
             word_to_search = word_to_search.lower()  # 将单词转换为小写
-            print('word_to_search1',word_to_search)
-            cursor.execute("SELECT * FROM words WHERE word=?", (word_to_search,))
+            cursor.execute("SELECT word_id, word FROM words WHERE word=?", (word_to_search,))
             word_details = cursor.fetchone()
 
-            if word_details:  #如果單字已存在於 words 表中，直接將單字添加到 user_words 表中。
-                word_id = word_details[0]
-                cursor.execute("INSERT OR IGNORE INTO user_words (user_id, word_id, difficulty_id) VALUES (?, ?, ?)", #使用 INSERT OR IGNORE 確保不會重複插入相同的單字到 user_words 表中。
-                               (user_id, word_id, 1)) #難易度預設為1
+            if word_details:  # 如果单词已存在于 words 表中
+                word_id, word_in_table = word_details
+                # 使用 REPLACE INTO 以避免重复插入
+                cursor.execute("""
+                REPLACE INTO user_words (user_id, word_id, difficulty_id, last_update_difficulty_time) 
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                """, (user_id, word_id, 1))  # 难易度默认为1
                 conn.commit()
-                processed_words.append(word_to_search)
+                processed_words.append(word_in_table)
                 toast_message = '新增成功'
                 
-            else: #如果單字不存在於 words 表中，使用 get_word_details 函數獲取單字詳細信息，並將單字添加到 words 表中，然後再將其添加到 user_words 表中。
-                print('word_to_search2',word_to_search)
+            else:  # 如果单词不存在于 words 表中
                 word = get_word_details(word_to_search)
                 if word:
-                    print('word_to_search3',word_to_search)
                     cursor.execute("""
                     INSERT OR IGNORE INTO words (word, pos, pronunciation, definition_en, definition_zh, synonyms_en, synonyms_zh, example_en, example_zh, prefixes, roots, suffixes) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -471,20 +470,21 @@ def process_words():
                         word['prefixes'], word['roots'], word['suffixes']
                     ))
                     conn.commit()
-                    cursor.execute("SELECT word_id FROM words WHERE word=?", (word_to_search,))
+                    cursor.execute("SELECT word_id, word FROM words WHERE word=?", (word['word'],))
                     result = cursor.fetchone()
-                    if result:  # 確保 result 不是 None
-                        word_id = result[0]
-                        cursor.execute("INSERT INTO user_words (user_id, word_id, difficulty_id) VALUES (?, ?, ?)",
-                                       (user_id, word_id, 1))  # 難易度預設為1
+                    if result:  # 确保 result 不是 None
+                        word_id, word_in_table = result
+                        cursor.execute("""
+                        REPLACE INTO user_words (user_id, word_id, difficulty_id, last_update_difficulty_time) 
+                        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                        """, (user_id, word_id, 1))  # 难易度默认为1
                         conn.commit()
-                        processed_words.append(word_to_search)
+                        processed_words.append(word_in_table)
                         toast_message = '新增成功'
                     else:
                         print(f"Error: Could not find word '{word_to_search}' after insertion")
-                        toast_message = '連線不穩，請再試一次'
+                        toast_message = '连线不稳，请再试一次'
                         return jsonify({'error': f"Could not find word '{word_to_search}' after insertion"}), 500
-                    
                     
                 else:
                     print(f"Error: Could not fetch details for word '{word_to_search}'")
@@ -498,6 +498,7 @@ def process_words():
     # 返回JSON响应给 word-preview.html 的 js
     new_words_query = ",".join(processed_words)
     return redirect(f'/?new_words={new_words_query}&toast={toast_message}')
+
 
 
 #------------------------#
@@ -720,7 +721,7 @@ def handle_image_message(event):
         user_id = user[0]
         process_words_fromline(filepath, user_id, event.reply_token)
     else:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage("帳號: ___/n 送出範例「帳號: account1」"))
+        line_bot_api.reply_message(event.reply_token, TextSendMessage("您尚未綁定帳號唷!\n請輸入「account: __ (填入帳號)」"))
 
     conn.close()
 
@@ -741,8 +742,10 @@ def process_words_fromline(filepath, user_id, reply_token):
         
         if word_details:
             word_id = word_details[0]
-            cursor.execute("INSERT OR IGNORE INTO user_words (user_id, word_id, difficulty_id) VALUES (?, ?, ?)", 
-                           (user_id, word_id, 1))  # 難易度預設為1
+            cursor.execute("""
+            REPLACE INTO user_words (user_id, word_id, difficulty_id, last_update_difficulty_time) 
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            """, (user_id, word_id, 1))  # 难易度默认为1
             conn.commit()
             processed_words.append({
                 'word': word_details[1],
