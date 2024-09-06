@@ -1,5 +1,4 @@
-# quickly-collect-words-sub
-(backend branch的部分是個人負責編寫部分)
+# quickly-collect-words-sub (backend branch由個人負責編寫)
 
 說明如下：
 opencv import 範例：app-0729-import.py
